@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  fastapi:
+    build: .
+    container_name: toolkitai-api
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount code for hot reload in development
+      - ./app:/app/app
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - toolkitai-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: toolkitai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # For SSL certificates (when you add a domain)
+      # - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - fastapi
+    networks:
+      - toolkitai-network
+
+networks:
+  toolkitai-network:
+    driver: bridge

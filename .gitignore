@@ -39,3 +39,32 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Backend specific
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+backend/.env.local
+backend/.env.production
+
+# SSL Certificates (NEVER commit these!)
+backend/nginx/ssl/*.key
+backend/nginx/ssl/*.pem
+backend/nginx/ssl/*.crt
+!backend/nginx/ssl/.gitkeep
+
+# SSH Keys (NEVER commit these!)
+*.pem
+*.key
+*.ppk
+id_rsa*
+
+# Secrets & Credentials
+secrets.json
+credentials.json
+service-account.json
+
+# Docker volumes & data
+backend/data/
+backend/uploads/
