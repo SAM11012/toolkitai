@@ -210,11 +210,12 @@ async def virtual_try_on(
 
 class PodcastRequest(BaseModel):
     topic: str
+    language: str = "en-US"
 
 @app.post("/api/podcast-creator")
 async def podcast_creator(request: PodcastRequest):
     try:
-        logger.info(f"Processing podcast generation for topic: {request.topic}")
+        logger.info(f"Processing podcast generation for topic: {request.topic} in language: {request.language}")
         
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
@@ -230,6 +231,7 @@ async def podcast_creator(request: PodcastRequest):
         text_prompt = f"""
         You are a scriptwriter for a podcast. Write a dialogue between two hosts, Emily and Mark, about the following topic:
         Topic: "{request.topic}"
+        Language: "{request.language}"
         
         Characters:
         - Emily: Enthusiastic, knowledgeable, and high-energy host.
