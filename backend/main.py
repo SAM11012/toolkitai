@@ -1,10 +1,12 @@
 from fastapi import FastAPI, File, UploadFile, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from rembg import remove
 from PIL import Image
 
 import io
 import os
+import base64
 import tempfile
 import logging
 
@@ -203,6 +205,74 @@ async def virtual_try_on(
         raise he
     except Exception as e:
         logger.error(f"Unexpected error in virtual try-on: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ExcuseRequest(BaseModel):
+    scenario: str
+
+@app.post("/api/excuse-maker")
+async def excuse_maker(request: ExcuseRequest):
+    try:
+        logger.info(f"Processing excuse generation for scenario: {request.scenario}")
+        
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not set")
+
+        client = genai.Client(api_key=api_key)
+        
+        # Step 1: Generate the text
+        text_prompt = f"""
+        You are a creative writer. Write a ridiculous, absurd, but professionally phrased excuse for the following scenario:
+        Scenario: "{request.scenario}"
+        
+        Rules:
+        1. It must sound serious and professional at first glance.
+        2. The content should be absurd (e.g., blaming a squirrel uprising, localized gravity failure, time loop).
+        3. Keep it under 50 words.
+        4. Output ONLY the excuse text.
+        """
+        
+        text_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=text_prompt
+        )
+        
+        if not text_response.text:
+            raise HTTPException(status_code=500, detail="Failed to generate excuse text")
+            
+        excuse_text = text_response.text.strip()
+        logger.info(f"Generated excuse text: {excuse_text}")
+        
+        # Step 2: Generate audio
+        audio_response = client.models.generate_content(
+            model="gemini-2.5-flash-tts",
+            contents=f"Please read this text with a serious, professional news anchor voice: '{excuse_text}'",
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"]
+            )
+        )
+        
+        audio_data_base64 = ""
+        
+        if audio_response.parts:
+            for part in audio_response.parts:
+                if part.inline_data:
+                    # part.inline_data.data is bytes
+                    audio_bytes = part.inline_data.data
+                    audio_data_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    break
+        
+        if not audio_data_base64:
+            raise HTTPException(status_code=500, detail="Failed to generate audio")
+            
+        return {
+            "excuse_text": excuse_text,
+            "audio_data": audio_data_base64
+        }
+
+    except Exception as e:
+        logger.error(f"Error in excuse maker: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

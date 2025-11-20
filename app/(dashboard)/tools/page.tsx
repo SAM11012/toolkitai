@@ -11,7 +11,8 @@ import {
   Music,
   Type,
   Sparkles,
-  Shirt
+  Shirt,
+  Mic
 } from 'lucide-react'
 
 const featuredTools = [
@@ -31,6 +32,15 @@ const featuredTools = [
     icon: Eraser,
     href: '/tools/bg-removal',
     category: 'image' as const,
+    featured: true,
+  },
+  {
+    id: 'excuse-maker',
+    name: 'Professional Excuse Maker',
+    description: 'Generate ridiculous but professional-sounding excuses with AI voice.',
+    icon: Mic,
+    href: '/tools/excuse-maker',
+    category: 'audio' as const,
     featured: true,
   },
   {
