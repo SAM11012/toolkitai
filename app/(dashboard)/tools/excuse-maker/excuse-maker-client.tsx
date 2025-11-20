@@ -5,9 +5,44 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Sparkles, Play, Pause, Download } from 'lucide-react'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
+const LANGUAGES = [
+    { code: 'ar-EG', name: 'Arabic (Egyptian)' },
+    { code: 'en-US', name: 'English (US)' },
+    { code: 'de-DE', name: 'German (Germany)' },
+    { code: 'es-US', name: 'Spanish (US)' },
+    { code: 'fr-FR', name: 'French (France)' },
+    { code: 'hi-IN', name: 'Hindi (India)' },
+    { code: 'id-ID', name: 'Indonesian (Indonesia)' },
+    { code: 'it-IT', name: 'Italian (Italy)' },
+    { code: 'ja-JP', name: 'Japanese (Japan)' },
+    { code: 'ko-KR', name: 'Korean (Korea)' },
+    { code: 'pt-BR', name: 'Portuguese (Brazil)' },
+    { code: 'ru-RU', name: 'Russian (Russia)' },
+    { code: 'nl-NL', name: 'Dutch (Netherlands)' },
+    { code: 'pl-PL', name: 'Polish (Poland)' },
+    { code: 'th-TH', name: 'Thai (Thailand)' },
+    { code: 'tr-TR', name: 'Turkish (Turkey)' },
+    { code: 'vi-VN', name: 'Vietnamese (Vietnam)' },
+    { code: 'ro-RO', name: 'Romanian (Romania)' },
+    { code: 'uk-UA', name: 'Ukrainian (Ukraine)' },
+    { code: 'bn-BD', name: 'Bengali (Bangladesh)' },
+    { code: 'en-IN', name: 'English (India)' },
+    { code: 'mr-IN', name: 'Marathi (India)' },
+    { code: 'ta-IN', name: 'Tamil (India)' },
+    { code: 'te-IN', name: 'Telugu (India)' },
+]
 
 export default function ExcuseMakerClient() {
     const [scenario, setScenario] = useState('')
+    const [language, setLanguage] = useState('en-US')
     const [isLoading, setIsLoading] = useState(false)
     const [result, setResult] = useState<{ text: string; audio: string } | null>(null)
     const [isPlaying, setIsPlaying] = useState(false)
@@ -27,7 +62,7 @@ export default function ExcuseMakerClient() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ scenario }),
+                body: JSON.stringify({ scenario, language }),
             })
 
             if (!response.ok) {
@@ -72,6 +107,24 @@ export default function ExcuseMakerClient() {
                                 onChange={(e) => setScenario(e.target.value)}
                                 className="min-h-[100px] text-lg resize-none"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Language
+                            </label>
+                            <Select value={language} onValueChange={setLanguage}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {LANGUAGES.map((lang) => (
+                                        <SelectItem key={lang.code} value={lang.code}>
+                                            {lang.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <Button
