@@ -1,19 +1,29 @@
 import { Navbar } from '@/components/Navbar'
 import { ToolCard } from '@/components/ToolCard'
-import { 
-  Users, 
-  Eraser, 
-  FileImage, 
-  Camera, 
+import {
+  Users,
+  Eraser,
+  FileImage,
+  Camera,
   PenTool,
   Video,
   Wand2,
   Music,
   Type,
-  Sparkles
+  Sparkles,
+  Shirt
 } from 'lucide-react'
 
 const featuredTools = [
+  {
+    id: 'virtual-try-on',
+    name: 'Virtual Try-On',
+    description: 'See how clothes look on you instantly with AI virtual try-on.',
+    icon: Shirt,
+    href: '/tools/virtual-try-on',
+    category: 'image' as const,
+    featured: true,
+  },
   {
     id: 'face-swap',
     name: 'Face Swap',
