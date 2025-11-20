@@ -1,9 +1,9 @@
 import { Navbar } from '@/components/Navbar'
 import { Mic, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import ExcuseMakerClient from './excuse-maker-client'
+import PodcastCreatorClient from './podcast-creator-client'
 
-export default function ExcuseMakerPage() {
+export default function PodcastCreatorPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
             <Navbar />
@@ -21,14 +21,14 @@ export default function ExcuseMakerPage() {
                         <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl">
                             <Mic className="w-8 h-8 text-white" />
                         </div>
-                        <h1 className="text-4xl font-bold text-gray-900">Professional Excuse Maker</h1>
+                        <h1 className="text-4xl font-bold text-gray-900">AI Podcast Creator</h1>
                     </div>
                     <p className="text-lg text-gray-600">
-                        Generate ridiculous but professional-sounding excuses with AI voice.
+                        Generate grounded podcast dialogues between Zephyr and Puck on any topic.
                     </p>
                 </div>
 
-                <ExcuseMakerClient />
+                <PodcastCreatorClient />
             </main>
         </div>
     )

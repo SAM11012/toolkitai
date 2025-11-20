@@ -9,6 +9,7 @@ import os
 import base64
 import tempfile
 import logging
+import wave
 
 from google import genai
 from google.genai import types
@@ -207,14 +208,13 @@ async def virtual_try_on(
         logger.error(f"Unexpected error in virtual try-on: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-class ExcuseRequest(BaseModel):
-    scenario: str
-    language: str = "en-US"
+class PodcastRequest(BaseModel):
+    topic: str
 
-@app.post("/api/excuse-maker")
-async def excuse_maker(request: ExcuseRequest):
+@app.post("/api/podcast-creator")
+async def podcast_creator(request: PodcastRequest):
     try:
-        logger.info(f"Processing excuse generation for scenario: {request.scenario} in language: {request.language}")
+        logger.info(f"Processing podcast generation for topic: {request.topic}")
         
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
@@ -222,40 +222,45 @@ async def excuse_maker(request: ExcuseRequest):
 
         client = genai.Client(api_key=api_key)
         
-        # Step 1: Generate the text
-        # Updated prompt for more context, humor, and specific language support
+        # Step 1: Generate the script with Grounding
+        grounding_tool = types.Tool(
+            google_search=types.GoogleSearch()
+        )
+
         text_prompt = f"""
-        You are a creative writer. Write a funny, absurd, yet professionally phrased excuse for the following scenario:
-        Scenario: "{request.scenario}"
-        Language: "{request.language}"
+        You are a scriptwriter for a podcast. Write a dialogue between two hosts, Emily and Mark, about the following topic:
+        Topic: "{request.topic}"
+        
+        Characters:
+        - Emily: Enthusiastic, knowledgeable, and high-energy host.
+        - Mark: Skeptical, curious, and slightly sarcastic co-host who asks the questions the audience might have.
         
         Rules:
-        1. Tone: Casual but professional (like a news anchor who is trying to be serious but the content is ridiculous).
-        2. Structure: Briefly set a context (what led to this), then the absurd event, and finally the consequence (the excuse).
-        3. Content: The excuse must be absurd (e.g., localized gravity failure, squirrel uprising, accidentally traveled to the 4th dimension).
-        4. Length: Around 2-3 sentences. Not too long, but enough to be a funny story.
-        5. Output: ONLY the excuse text in the requested language.
+        1. Use Google Search to find the latest facts and information about the topic.
+        2. Explain the concept clearly and engagingly.
+        3. Keep the dialogue natural and conversational.
+        4. Length: Around 200-300 words.
+        5. Output: The dialogue script, with speaker names (Emily: ... Mark: ...).
         """
         
         text_response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=text_prompt
+            contents=text_prompt,
+            config=types.GenerateContentConfig(
+                tools=[grounding_tool]
+            )
         )
         
         if not text_response.text:
-            raise HTTPException(status_code=500, detail="Failed to generate excuse text")
+            raise HTTPException(status_code=500, detail="Failed to generate podcast script")
             
-        excuse_text = text_response.text.strip()
-        logger.info(f"Generated excuse text: {excuse_text}")
+        script_text = text_response.text.strip()
+        logger.info(f"Generated podcast script length: {len(script_text)}")
         
         # Step 2: Generate audio
-        # Updated prompt for specific voice character and language
-        audio_prompt = f"""
-        Read the following text as a professional news anchor who is struggling to keep a straight face.
-        You should sound professional initially, but then maybe let out a slight chuckle or sound amused by the absurdity of what you are reading.
-        The language is {request.language}.
-        
-        Text: "{excuse_text}"
+        # Using multi-speaker configuration
+        audio_prompt = f"""TTS the following conversation between Mark and Emily:
+        {script_text}
         """
         
         audio_response = client.models.generate_content(
@@ -264,10 +269,25 @@ async def excuse_maker(request: ExcuseRequest):
             config=types.GenerateContentConfig(
                 response_modalities=["AUDIO"],
                 speech_config=types.SpeechConfig(
-                    voice_config=types.VoiceConfig(
-                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name="Rasalgethi"
-                        )
+                    multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+                        speaker_voice_configs=[
+                            types.SpeakerVoiceConfig(
+                                speaker='Emily',
+                                voice_config=types.VoiceConfig(
+                                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                        voice_name='Zephyr', # Energetic
+                                    )
+                                )
+                            ),
+                            types.SpeakerVoiceConfig(
+                                speaker='Mark',
+                                voice_config=types.VoiceConfig(
+                                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                        voice_name='Puck', # Skeptical/Curious
+                                    )
+                                )
+                            ),
+                        ]
                     )
                 ),
             )
@@ -278,22 +298,44 @@ async def excuse_maker(request: ExcuseRequest):
         if audio_response.parts:
             for part in audio_response.parts:
                 if part.inline_data:
-                    audio_bytes = part.inline_data.data
-                    # IMPORTANT: The API returns raw PCM/WAV or similar. 
-                    # We should treat it as audio/wav unless configured otherwise.
-                    audio_data_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    pcm_bytes = part.inline_data.data
+                    
+                    # Save to a temporary file, then read it back as bytes
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
+                        tmp_path = tmp_file.name
+                    
+                    try:
+                        # Write PCM data to WAV file
+                        with wave.open(tmp_path, 'wb') as wav_file:
+                            wav_file.setnchannels(1)
+                            wav_file.setsampwidth(2)
+                            wav_file.setframerate(24000)
+                            wav_file.writeframes(pcm_bytes)
+                        
+                        # Read back the WAV file
+                        with open(tmp_path, "rb") as f:
+                            wav_bytes = f.read()
+                            
+                        logger.info(f"Converted PCM to WAV via temp file. Size: {len(wav_bytes)} bytes")
+                        audio_data_base64 = base64.b64encode(wav_bytes).decode('utf-8')
+                        
+                    finally:
+                        # Clean up the temporary file
+                        if os.path.exists(tmp_path):
+                            os.remove(tmp_path)
+                        
                     break
         
         if not audio_data_base64:
             raise HTTPException(status_code=500, detail="Failed to generate audio")
             
         return {
-            "excuse_text": excuse_text,
+            "script_text": script_text,
             "audio_data": audio_data_base64
         }
 
     except Exception as e:
-        logger.error(f"Error in excuse maker: {e}")
+        logger.error(f"Error in podcast creator: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
