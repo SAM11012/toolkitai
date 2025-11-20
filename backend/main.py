@@ -209,11 +209,12 @@ async def virtual_try_on(
 
 class ExcuseRequest(BaseModel):
     scenario: str
+    language: str = "en-US"
 
 @app.post("/api/excuse-maker")
 async def excuse_maker(request: ExcuseRequest):
     try:
-        logger.info(f"Processing excuse generation for scenario: {request.scenario}")
+        logger.info(f"Processing excuse generation for scenario: {request.scenario} in language: {request.language}")
         
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
@@ -222,15 +223,18 @@ async def excuse_maker(request: ExcuseRequest):
         client = genai.Client(api_key=api_key)
         
         # Step 1: Generate the text
+        # Updated prompt for more context, humor, and specific language support
         text_prompt = f"""
-        You are a creative writer. Write a ridiculous, absurd, but professionally phrased excuse for the following scenario:
+        You are a creative writer. Write a funny, absurd, yet professionally phrased excuse for the following scenario:
         Scenario: "{request.scenario}"
+        Language: "{request.language}"
         
         Rules:
-        1. It must sound serious and professional at first glance.
-        2. The content should be absurd (e.g., blaming a squirrel uprising, localized gravity failure, time loop).
-        3. Keep it under 50 words.
-        4. Output ONLY the excuse text.
+        1. Tone: Casual but professional (like a news anchor who is trying to be serious but the content is ridiculous).
+        2. Structure: Briefly set a context (what led to this), then the absurd event, and finally the consequence (the excuse).
+        3. Content: The excuse must be absurd (e.g., localized gravity failure, squirrel uprising, accidentally traveled to the 4th dimension).
+        4. Length: Around 2-3 sentences. Not too long, but enough to be a funny story.
+        5. Output: ONLY the excuse text in the requested language.
         """
         
         text_response = client.models.generate_content(
@@ -245,11 +249,28 @@ async def excuse_maker(request: ExcuseRequest):
         logger.info(f"Generated excuse text: {excuse_text}")
         
         # Step 2: Generate audio
+        # Updated prompt for specific voice character and language
+        audio_prompt = f"""
+        Read the following text as a professional news anchor who is struggling to keep a straight face.
+        You should sound professional initially, but then maybe let out a slight chuckle or sound amused by the absurdity of what you are reading.
+        The language is {request.language}.
+        
+        Text: "{excuse_text}"
+        """
+        
         audio_response = client.models.generate_content(
-            model="gemini-2.5-flash-tts",
-            contents=f"Please read this text with a serious, professional news anchor voice: '{excuse_text}'",
+            model="gemini-2.5-flash-preview-tts",
+            contents=audio_prompt,
             config=types.GenerateContentConfig(
-                response_modalities=["AUDIO"]
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name="Aoede" # A deep, professional voice, good for anchors
+                        )
+                    )
+                ),
+                audio_timestamp=False # Do not return timestamps to save size if not needed
             )
         )
         
@@ -258,7 +279,6 @@ async def excuse_maker(request: ExcuseRequest):
         if audio_response.parts:
             for part in audio_response.parts:
                 if part.inline_data:
-                    # part.inline_data.data is bytes
                     audio_bytes = part.inline_data.data
                     audio_data_base64 = base64.b64encode(audio_bytes).decode('utf-8')
                     break
