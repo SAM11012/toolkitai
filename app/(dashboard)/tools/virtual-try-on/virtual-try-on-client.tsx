@@ -90,9 +90,11 @@ export default function VirtualTryOnClient() {
         "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=2836&auto=format&fit=crop"  // Patterned Shirt (kept from before)
     ]
 
+    const [isSampleLoading, setIsSampleLoading] = useState(false)
+
     const handleSampleSelect = async (url: string, type: 'person' | 'garment') => {
         try {
-            setIsLoading(true)
+            setIsSampleLoading(true)
             const response = await fetch(url)
             const blob = await response.blob()
             const file = new File([blob], `sample-${type}.jpg`, { type: 'image/jpeg' })
@@ -109,7 +111,7 @@ export default function VirtualTryOnClient() {
         } catch (err) {
             console.error('Error loading sample image:', err)
         } finally {
-            setIsLoading(false)
+            setIsSampleLoading(false)
         }
     }
 
@@ -242,13 +244,18 @@ export default function VirtualTryOnClient() {
                 <Button
                     size="lg"
                     onClick={handleTryOn}
-                    disabled={!personFile || !garmentFile || isLoading}
+                    disabled={!personFile || !garmentFile || isLoading || isSampleLoading}
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 h-12 text-lg shadow-lg hover:shadow-xl transition-all"
                 >
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             Generating Virtual Try-On...
+                        </>
+                    ) : isSampleLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Loading Sample...
                         </>
                     ) : (
                         <>
