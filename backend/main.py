@@ -208,6 +208,130 @@ async def virtual_try_on(
         logger.error(f"Unexpected error in virtual try-on: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/face-swap")
+async def face_swap(
+    source_image: UploadFile = File(...),
+    target_image: UploadFile = File(...)
+):
+    try:
+        logger.info(f"Processing face swap request. Source: {source_image.filename}, Target: {target_image.filename}")
+        
+        # Read images
+        source_bytes = await source_image.read()
+        target_bytes = await target_image.read()
+        
+        source_pil = Image.open(io.BytesIO(source_bytes))
+        target_pil = Image.open(io.BytesIO(target_bytes))
+        
+        # Calculate aspect ratio of target image to match output
+        width, height = target_pil.size
+        aspect_ratio_map = {
+            (1, 1): "1:1",
+            (2, 3): "2:3",
+            (3, 2): "3:2",
+            (3, 4): "3:4",
+            (4, 3): "4:3",
+            (4, 5): "4:5",
+            (5, 4): "5:4",
+            (9, 16): "9:16",
+            (16, 9): "16:9",
+            (21, 9): "21:9",
+        }
+        
+        # Find closest aspect ratio
+        def gcd(a, b):
+            while b:
+                a, b = b, a % b
+            return a
+        
+        divisor = gcd(width, height)
+        ratio_w = width // divisor
+        ratio_h = height // divisor
+        
+        # Try to find exact match or closest
+        aspect_ratio = "1:1"  # default
+        if (ratio_w, ratio_h) in aspect_ratio_map:
+            aspect_ratio = aspect_ratio_map[(ratio_w, ratio_h)]
+        else:
+            # Find closest based on ratio value
+            target_ratio = width / height
+            closest_key = min(aspect_ratio_map.keys(), key=lambda k: abs((k[0]/k[1]) - target_ratio))
+            aspect_ratio = aspect_ratio_map[closest_key]
+        
+        logger.info(f"Detected aspect ratio for target image: {aspect_ratio}")
+        
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            logger.error("GOOGLE_API_KEY not set")
+            raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not set")
+
+        client = genai.Client(api_key=api_key)
+        
+        prompt = """Face Swap Task:
+        1. Analyze the first image (source face) and the second image (target body/scene).
+        2. Identify the face in the source image.
+        3. Identify the face in the target image.
+        4. Replace the face in the target image with the face from the source image.
+        5. CRITICAL: Keep the target image's background, lighting, body pose, hair, and style EXACTLY as they are. Only change the facial features to match the source person.
+        6. Blend the source face naturally into the target image, adjusting skin tone and lighting to match the target scene.
+        7. Ensure high photorealism.
+        8. Go all out on quality and realism.
+        """
+        
+        logger.info("Sending request to Gemini API for Face Swap...")
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-image",
+            contents=[source_pil, target_pil, prompt],
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio
+                ),
+            )
+        )
+        logger.info("Received response from Gemini API")
+        
+        generated_image_bytes = None
+        
+        if response.parts:
+            for part in response.parts:
+                if part.inline_data:
+                    img = part.as_image()
+                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+                        tmp_path = tmp_file.name
+                    
+                    img.save(tmp_path)
+                    
+                    with open(tmp_path, "rb") as f:
+                        generated_image_bytes = f.read()
+                    
+                    os.remove(tmp_path)
+                    break
+        
+        if not generated_image_bytes:
+            text_response = ""
+            if response.parts:
+                for part in response.parts:
+                    if part.text:
+                        text_response += part.text
+            
+            logger.warning(f"No image generated. Text response: {text_response}")
+            
+            if text_response:
+                raise HTTPException(status_code=400, detail=f"Generation failed: {text_response}")
+            else:
+                raise HTTPException(status_code=500, detail="Failed to generate image. The model might have failed to process the request.")
+             
+        logger.info("Face swap successful, returning image.")
+        return Response(content=generated_image_bytes, media_type="image/png")
+        
+    except HTTPException as he:
+        logger.error(f"HTTP Exception in face swap: {he.detail}")
+        raise he
+    except Exception as e:
+        logger.error(f"Unexpected error in face swap: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 class PodcastRequest(BaseModel):
     topic: str
     language: str = "en-US"

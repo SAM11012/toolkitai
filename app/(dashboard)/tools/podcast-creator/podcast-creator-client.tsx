@@ -18,6 +18,7 @@ export default function PodcastCreatorClient() {
     const [topic, setTopic] = useState('')
     const [language, setLanguage] = useState('en-US')
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const LANGUAGES = [
         { code: 'ar-EG', name: 'Arabic (Egyptian)' },
@@ -64,6 +65,7 @@ export default function PodcastCreatorClient() {
         setIsLoading(true)
         setResult(null)
         setIsPlaying(false)
+        setError(null)
 
         try {
             // Use environment variable or fallback to EC2 IP
@@ -89,9 +91,9 @@ export default function PodcastCreatorClient() {
                 audio: `data:audio/wav;base64,${data.audio_data}`
             })
 
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            // You might want to show an error toast here
+            setError(err.message || 'Failed to generate podcast. Please try again.')
         } finally {
             setIsLoading(false)
         }
@@ -168,6 +170,12 @@ export default function PodcastCreatorClient() {
                                 </>
                             )}
                         </Button>
+
+                        {error && (
+                            <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center border border-red-200 font-medium mt-4">
+                                Error: {error}
+                            </div>
+                        )}
 
                         {result && (
                             <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

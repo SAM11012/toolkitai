@@ -142,6 +142,11 @@ export default function BgRemovalClient() {
         <div className="max-w-5xl mx-auto w-full">
             <Card className="w-full overflow-hidden shadow-xl border-0 ring-1 ring-gray-200 py-0">
                 <CardContent className="p-0">
+                    {error && (
+                        <div className="bg-red-50 text-red-600 p-4 text-center border-b border-red-200 font-medium">
+                            Error: {error}
+                        </div>
+                    )}
                     <div className="flex flex-col lg:flex-row min-h-[600px] bg-white">
                         {/* LEFT: Main Canvas / Preview Area */}
                         <div className="flex-1 bg-gray-50/50 flex items-center justify-center relative overflow-hidden">
