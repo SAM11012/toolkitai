@@ -70,9 +70,10 @@ export default function ExcuseMakerClient() {
             }
 
             const data = await response.json()
+            console.log("Received audio data length:", data.audio_data.length)
             setResult({
                 text: data.excuse_text,
-                audio: `data:audio/mp3;base64,${data.audio_data}`
+                audio: `data:audio/wav;base64,${data.audio_data}`
             })
 
         } catch (err) {

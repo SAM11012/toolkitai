@@ -266,11 +266,10 @@ async def excuse_maker(request: ExcuseRequest):
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
                         prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name="Aoede" # A deep, professional voice, good for anchors
+                            voice_name="Rasalgethi"
                         )
                     )
                 ),
-                audio_timestamp=False # Do not return timestamps to save size if not needed
             )
         )
         
@@ -280,6 +279,8 @@ async def excuse_maker(request: ExcuseRequest):
             for part in audio_response.parts:
                 if part.inline_data:
                     audio_bytes = part.inline_data.data
+                    # IMPORTANT: The API returns raw PCM/WAV or similar. 
+                    # We should treat it as audio/wav unless configured otherwise.
                     audio_data_base64 = base64.b64encode(audio_bytes).decode('utf-8')
                     break
         
