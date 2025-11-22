@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 # Authentication Middleware
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Skip auth for root endpoint and health checks
-        if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/redoc"]:
+        # Skip auth for root endpoint and health checks only
+        if request.url.path in ["/", "/health"]:
             return await call_next(request)
         
         # Check for X-User-ID header (set by Next.js API routes)
