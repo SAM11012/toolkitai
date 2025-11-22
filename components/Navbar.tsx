@@ -45,7 +45,7 @@ export function Navbar() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              AI Toolkit
+              ToolkitAI
             </span>
           </div>
 

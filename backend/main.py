@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rembg import remove
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 import io
 import os
@@ -21,6 +21,37 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+def add_watermark(image: Image.Image, text: str = "toolkitai.io") -> Image.Image:
+    """Add watermark to image in bottom-right corner"""
+    watermarked = image.copy()
+    draw = ImageDraw.Draw(watermarked)
+    
+    width, height = watermarked.size
+    font_size = max(12, int(width * 0.02))
+    
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+    except:
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", font_size)
+        except:
+            font = ImageFont.load_default()
+    
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    
+    padding = max(10, int(width * 0.01))
+    x = width - text_width - padding
+    y = height - text_height - padding
+    
+    bg_padding = 5
+    background_bbox = [x - bg_padding, y - bg_padding, x + text_width + bg_padding, y + text_height + bg_padding]
+    draw.rectangle(background_bbox, fill=(0, 0, 0, 180))
+    draw.text((x, y), text, fill=(255, 255, 255, 255), font=font)
+    
+    return watermarked
 
 app = FastAPI(title="ToolkitAI API")
 
@@ -54,9 +85,17 @@ async def bg_removal(file: UploadFile = File(...)):
         # Remove background using rembg
         output_data = remove(image_data)
         
-        logger.info("Background removal successful")
-        # Return the processed image as a PNG response
-        return Response(content=output_data, media_type="image/png")
+        # Add watermark
+        img = Image.open(io.BytesIO(output_data))
+        watermarked_img = add_watermark(img)
+        
+        # Convert back to bytes
+        img_byte_arr = io.BytesIO()
+        watermarked_img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        
+        logger.info("Background removal successful with watermark")
+        return Response(content=img_byte_arr, media_type="image/png")
     except Exception as e:
         logger.error(f"Error in background removal: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -169,12 +208,15 @@ async def virtual_try_on(
             for part in response.parts:
                 if part.inline_data:
                     img = part.as_image()
-                    # Gemini's as_image() appears to return an object that doesn't support BytesIO saving
-                    # Save to a temporary file instead, then read it back as bytes
+                    
+                    # Add watermark
+                    watermarked_img = add_watermark(img)
+                    
+                    # Save to a temporary file, then read it back as bytes
                     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
                         tmp_path = tmp_file.name
                     
-                    img.save(tmp_path)
+                    watermarked_img.save(tmp_path)
                     
                     with open(tmp_path, "rb") as f:
                         generated_image_bytes = f.read()
@@ -300,10 +342,14 @@ async def face_swap(
             for part in response.parts:
                 if part.inline_data:
                     img = part.as_image()
+                    
+                    # Add watermark
+                    watermarked_img = add_watermark(img)
+                    
                     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
                         tmp_path = tmp_file.name
                     
-                    img.save(tmp_path)
+                    watermarked_img.save(tmp_path)
                     
                     with open(tmp_path, "rb") as f:
                         generated_image_bytes = f.read()

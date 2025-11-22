@@ -30,7 +30,7 @@ export default function LoginPage() {
               <Sparkles className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">Welcome to AI Toolkit</CardTitle>
+          <CardTitle className="text-3xl font-bold">Welcome to ToolkitAI</CardTitle>
           <CardDescription className="text-base">
             Sign in to access powerful AI tools for image, video, and text processing
           </CardDescription>

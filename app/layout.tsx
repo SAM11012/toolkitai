@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Toolkit - Powerful AI Tools for Everyone",
+  title: "ToolkitAI - Powerful AI Tools for Everyone",
   description: "Transform your creative workflow with our suite of AI tools for image, video, audio, and text processing.",
 };
 

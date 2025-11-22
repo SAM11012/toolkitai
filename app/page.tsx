@@ -168,7 +168,7 @@ export default function Home() {
             Ready to transform your workflow?
           </h2>
           <p className="text-xl mb-6 opacity-90">
-            Join thousands of creators using AI Toolkit today
+            Join thousands of creators using ToolkitAI today
           </p>
           <Link href="/login">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-6 gap-2">
