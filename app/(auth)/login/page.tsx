@@ -1,12 +1,13 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, X } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const supabase = createClient()
+  const router = useRouter()
 
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -21,27 +22,48 @@ export default function LoginPage() {
     }
   }
 
+  const handleClose = () => {
+    router.back()
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center mb-2">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl">
-              <Sparkles className="w-8 h-8 text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-fade-in">
+      {/* Modal */}
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-fade-in">
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        {/* Content */}
+        <div className="text-center">
+          {/* Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-2xl shadow-lg shadow-indigo-500/30">
+              <Sparkles className="w-10 h-10 text-white" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">Welcome to ToolkitAI</CardTitle>
-          <CardDescription className="text-base">
-            Sign in to access powerful AI tools for image, video, and text processing
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
+
+          {/* Title */}
+          <h1 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+            Welcome Back
+          </h1>
+
+          {/* Description */}
+          <p className="text-base text-gray-600 mb-8 leading-relaxed">
+            Sign in to access your creative workspace<br />and AI tools.
+          </p>
+
+          {/* Google Sign In Button */}
+          <button
             onClick={handleGoogleSignIn}
-            className="w-full h-12 text-base"
-            size="lg"
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
           >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -60,12 +82,22 @@ export default function LoginPage() {
               />
             </svg>
             Continue with Google
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            By continuing, you agree to our Terms of Service and Privacy Policy
+          </button>
+
+          {/* Terms & Privacy */}
+          <p className="text-xs text-gray-500 mt-6 leading-relaxed">
+            By continuing, you agree to our{' '}
+            <Link href="/terms" className="text-gray-600 hover:text-indigo-600 underline underline-offset-2 transition-colors">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="text-gray-600 hover:text-indigo-600 underline underline-offset-2 transition-colors">
+              Privacy Policy
+            </Link>
+            .
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
