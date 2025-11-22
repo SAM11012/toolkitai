@@ -14,13 +14,26 @@ export default function VirtualTryOnClient() {
 
     const [generatedImage, setGeneratedImage] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [loadingStep, setLoadingStep] = useState('')
     const [error, setError] = useState<string | null>(null)
+
+    const validateImageFile = (file: File): string | null => {
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+        if (!validTypes.includes(file.type)) {
+            return 'Please upload a valid image file (PNG, JPG, JPEG, or WebP).'
+        }
+        if (file.size > 50 * 1024 * 1024) {
+            return 'File size exceeds 50MB limit. Please upload a smaller image.'
+        }
+        return null
+    }
 
     const handlePersonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
-            if (file.size > 50 * 1024 * 1024) {
-                setError('File size exceeds 50MB limit. Please upload a smaller image.')
+            const error = validateImageFile(file)
+            if (error) {
+                setError(error)
                 return
             }
             setPersonFile(file)
@@ -33,8 +46,9 @@ export default function VirtualTryOnClient() {
     const handleGarmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
-            if (file.size > 50 * 1024 * 1024) {
-                setError('File size exceeds 50MB limit. Please upload a smaller image.')
+            const error = validateImageFile(file)
+            if (error) {
+                setError(error)
                 return
             }
             setGarmentFile(file)
@@ -58,17 +72,31 @@ export default function VirtualTryOnClient() {
 
         setIsLoading(true)
         setError(null)
+        setLoadingStep('Analyzing outfit...')
 
         try {
             const formData = new FormData()
             formData.append('person_image', personFile)
             formData.append('garment_image', garmentFile)
 
+            // Update status after 5 seconds
+            const timeout1 = setTimeout(() => {
+                setLoadingStep('Fitting clothes (no tailoring needed!)...')
+            }, 5000)
+
+            // Update status after 12 seconds
+            const timeout2 = setTimeout(() => {
+                setLoadingStep('Adding finishing touches...')
+            }, 12000)
+
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
             const response = await fetch(`${apiUrl}/api/virtual-try-on`, {
                 method: 'POST',
                 body: formData,
             })
+
+            clearTimeout(timeout1)
+            clearTimeout(timeout2)
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}))
@@ -83,6 +111,7 @@ export default function VirtualTryOnClient() {
             setError(err.message || 'Failed to process image. Please try again.')
         } finally {
             setIsLoading(false)
+            setLoadingStep('')
         }
     }
 
@@ -258,7 +287,7 @@ export default function VirtualTryOnClient() {
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Generating Virtual Try-On...
+                            {loadingStep || 'Generating Virtual Try-On...'}
                         </>
                     ) : isSampleLoading ? (
                         <>

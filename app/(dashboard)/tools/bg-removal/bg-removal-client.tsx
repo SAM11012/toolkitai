@@ -13,6 +13,7 @@ export default function BgRemovalClient() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [processedUrl, setProcessedUrl] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [loadingStep, setLoadingStep] = useState('')
     const [error, setError] = useState<string | null>(null)
 
     // Customize State
@@ -21,9 +22,25 @@ export default function BgRemovalClient() {
     const [bgValue, setBgValue] = useState<string>('') // Color hex or Image URL
     const [isDownloading, setIsDownloading] = useState(false)
 
+    const validateImageFile = (file: File): string | null => {
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+        if (!validTypes.includes(file.type)) {
+            return 'Please upload a valid image file (PNG, JPG, JPEG, or WebP).'
+        }
+        if (file.size > 50 * 1024 * 1024) {
+            return 'File size exceeds 50MB limit. Please upload a smaller image.'
+        }
+        return null
+    }
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
+            const validationError = validateImageFile(file)
+            if (validationError) {
+                setError(validationError)
+                return
+            }
             setSelectedFile(file)
             const url = URL.createObjectURL(file)
             setPreviewUrl(url)
@@ -46,10 +63,16 @@ export default function BgRemovalClient() {
         if (!selectedFile) return
         setIsLoading(true)
         setError(null)
+        setLoadingStep('Analyzing image...')
 
         try {
             const formData = new FormData()
             formData.append('file', selectedFile)
+
+            // Update status after 3 seconds
+            const timeout = setTimeout(() => {
+                setLoadingStep('Removing background...')
+            }, 3000)
 
             // Use environment variable or fallback to EC2 IP
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
@@ -57,6 +80,8 @@ export default function BgRemovalClient() {
                 method: 'POST',
                 body: formData,
             })
+
+            clearTimeout(timeout)
 
             if (!response.ok) throw new Error('Failed to process image')
 
@@ -68,6 +93,7 @@ export default function BgRemovalClient() {
             setError('Failed to process image. Please try again.')
         } finally {
             setIsLoading(false)
+            setLoadingStep('')
         }
     }
 
@@ -257,7 +283,7 @@ export default function BgRemovalClient() {
                                 {!processedUrl ? (
                                     <div className="flex flex-col h-full items-center justify-center text-center space-y-4">
                                         <Button onClick={handleProcess} size="lg" disabled={isLoading} className="w-full">
-                                            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : <><Eraser className="mr-2 h-4 w-4" /> Remove Background</>}
+                                            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {loadingStep || 'Processing...'}</> : <><Eraser className="mr-2 h-4 w-4" /> Remove Background</>}
                                         </Button>
                                         <p className="text-xs text-gray-500">AI processing takes 2-5 seconds</p>
                                     </div>

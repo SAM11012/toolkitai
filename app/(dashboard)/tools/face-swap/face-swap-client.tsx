@@ -16,11 +16,23 @@ export default function FaceSwapClient() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const validateImageFile = (file: File): string | null => {
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+        if (!validTypes.includes(file.type)) {
+            return 'Please upload a valid image file (PNG, JPG, JPEG, or WebP).'
+        }
+        if (file.size > 50 * 1024 * 1024) {
+            return 'File size exceeds 50MB limit. Please upload a smaller image.'
+        }
+        return null
+    }
+
     const handleSourceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
-            if (file.size > 50 * 1024 * 1024) {
-                setError('File size exceeds 50MB limit. Please upload a smaller image.')
+            const error = validateImageFile(file)
+            if (error) {
+                setError(error)
                 return
             }
             setSourceFile(file)
@@ -33,8 +45,9 @@ export default function FaceSwapClient() {
     const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
-            if (file.size > 50 * 1024 * 1024) {
-                setError('File size exceeds 50MB limit. Please upload a smaller image.')
+            const error = validateImageFile(file)
+            if (error) {
+                setError(error)
                 return
             }
             setTargetFile(file)

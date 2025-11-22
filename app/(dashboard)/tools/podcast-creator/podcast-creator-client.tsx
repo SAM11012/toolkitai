@@ -31,11 +31,11 @@ export default function PodcastCreatorClient() {
 
         const timeout1 = setTimeout(() => {
             setLoadingStep('Generating voiceover...')
-        }, 4000)
+        }, 8000)
 
         const timeout2 = setTimeout(() => {
             setLoadingStep('Finalizing audio...')
-        }, 12000)
+        }, 20000)
 
         return () => {
             clearTimeout(timeout1)
