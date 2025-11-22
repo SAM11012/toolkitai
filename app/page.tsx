@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-mesh">
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-2xl">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-2xl shadow-xl shadow-indigo-500/30 animate-float">
               <Sparkles className="w-12 h-12 text-white" />
             </div>
           </div>
@@ -141,69 +141,75 @@ export default function Home() {
 
         {/* Features */}
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center p-6">
-            <div className="bg-gradient-to-br from-indigo-100 to-purple-100 p-3 rounded-xl w-fit mx-auto mb-4">
+          <div className="text-center p-8 rounded-2xl bg-white/50 backdrop-blur-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-2xl w-fit mx-auto mb-4 shadow-sm">
               <Zap className="w-8 h-8 text-indigo-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-bold mb-2 tracking-tight">Lightning Fast</h3>
+            <p className="text-gray-600 leading-relaxed">
               Process your files in seconds with our optimized AI infrastructure
             </p>
           </div>
 
-          <div className="text-center p-6">
-            <div className="bg-gradient-to-br from-indigo-100 to-purple-100 p-3 rounded-xl w-fit mx-auto mb-4">
+          <div className="text-center p-8 rounded-2xl bg-white/50 backdrop-blur-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-2xl w-fit mx-auto mb-4 shadow-sm">
               <Shield className="w-8 h-8 text-indigo-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Secure & Private</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-bold mb-2 tracking-tight">Secure & Private</h3>
+            <p className="text-gray-600 leading-relaxed">
               Your files are encrypted and automatically deleted after processing
             </p>
           </div>
 
-          <div className="text-center p-6">
-            <div className="bg-gradient-to-br from-indigo-100 to-purple-100 p-3 rounded-xl w-fit mx-auto mb-4">
+          <div className="text-center p-8 rounded-2xl bg-white/50 backdrop-blur-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-2xl w-fit mx-auto mb-4 shadow-sm">
               <Sparkles className="w-8 h-8 text-indigo-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">State-of-the-Art AI</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-bold mb-2 tracking-tight">State-of-the-Art AI</h3>
+            <p className="text-gray-600 leading-relaxed">
               Powered by the latest AI models for best-in-class results
             </p>
           </div>
         </div>
 
         {/* CTA */}
-        <div className="mt-24 text-center bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-12 text-white">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to transform your workflow?
-          </h2>
-          <p className="text-xl mb-6 opacity-90">
-            Join thousands of creators using ToolkitAI today
-          </p>
-          <Link href="/login">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6 gap-2">
-              Start Creating Now
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
+        <div className="mt-24 text-center bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-12 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold mb-4 tracking-tight">
+              Ready to transform your workflow?
+            </h2>
+            <p className="text-xl mb-6 opacity-90">
+              Join thousands of creators using ToolkitAI today
+            </p>
+            <Link href="/login">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-6 gap-2 shadow-xl">
+                Start Creating Now
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white/50 backdrop-blur-sm mt-16">
+      <footer className="border-t border-gray-100 bg-white/70 backdrop-blur-md mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-500">
               © 2025 ToolkitAI. All rights reserved.
             </div>
-            <div className="flex gap-6 text-sm">
-              <Link href="/privacy" className="text-gray-600 hover:text-indigo-600 transition-colors">
+            <div className="flex gap-6 text-sm font-medium">
+              <Link href="/privacy" className="text-gray-600 hover:text-indigo-600 transition-colors duration-200">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-gray-600 hover:text-indigo-600 transition-colors">
+              <Link href="/terms" className="text-gray-600 hover:text-indigo-600 transition-colors duration-200">
                 Terms of Service
               </Link>
-              <a href="mailto:support@toolkitai.io" className="text-gray-600 hover:text-indigo-600 transition-colors">
+              <a href="mailto:support@toolkitai.io" className="text-gray-600 hover:text-indigo-600 transition-colors duration-200">
                 Contact
               </a>
             </div>
