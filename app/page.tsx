@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, Zap, Shield, ArrowRight, Shirt, Eraser, Users, Mic, Camera } from "lucide-react";
+import { Sparkles, Zap, Shield, ArrowRight, Shirt, Eraser, Mic, Camera } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -49,7 +49,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link href="/tools/virtual-try-on" className="group">
               <Card className="h-full transition-all hover:shadow-xl hover:scale-[1.02] border-2 hover:border-indigo-300 cursor-pointer">
                 <CardHeader className="space-y-3">
@@ -68,37 +68,19 @@ export default function Home() {
               </Card>
             </Link>
 
-            <Link href="/tools/bg-removal" className="group">
+            <Link href="/tools/celebrity-selfie" className="group">
               <Card className="h-full transition-all hover:shadow-xl hover:scale-[1.02] border-2 hover:border-indigo-300 cursor-pointer">
                 <CardHeader className="space-y-3">
                   <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl w-fit group-hover:scale-110 transition-transform">
-                    <Eraser className="w-8 h-8 text-white" />
+                    <Camera className="w-8 h-8 text-white" />
                   </div>
                   <CardTitle className="text-xl group-hover:text-indigo-600 transition-colors">
-                    Background Removal
+                    Selfie with Celebrity
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-base">
-                    Remove backgrounds instantly with AI precision
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/tools/face-swap" className="group">
-              <Card className="h-full transition-all hover:shadow-xl hover:scale-[1.02] border-2 hover:border-indigo-300 cursor-pointer">
-                <CardHeader className="space-y-3">
-                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl w-fit group-hover:scale-110 transition-transform">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl group-hover:text-indigo-600 transition-colors">
-                    Face Swap
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base">
-                    Swap faces in photos with AI precision
+                    Create amazing selfies with celebrities using AI
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -122,19 +104,19 @@ export default function Home() {
               </Card>
             </Link>
 
-            <Link href="/tools/celebrity-selfie" className="group">
+            <Link href="/tools/bg-removal" className="group">
               <Card className="h-full transition-all hover:shadow-xl hover:scale-[1.02] border-2 hover:border-indigo-300 cursor-pointer">
                 <CardHeader className="space-y-3">
                   <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl w-fit group-hover:scale-110 transition-transform">
-                    <Camera className="w-8 h-8 text-white" />
+                    <Eraser className="w-8 h-8 text-white" />
                   </div>
                   <CardTitle className="text-xl group-hover:text-indigo-600 transition-colors">
-                    Selfie with Celebrity
+                    Background Removal
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-base">
-                    Create amazing selfies with celebrities using AI
+                    Remove backgrounds instantly with AI precision
                   </CardDescription>
                 </CardContent>
               </Card>
