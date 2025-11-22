@@ -137,11 +137,15 @@ export default function CelebritySelfieClient() {
     const [isSampleLoading, setIsSampleLoading] = useState(false)
 
     const handleSampleSelect = async (url: string, type: 'user' | 'celebrity') => {
+        setIsSampleLoading(true)
+        setError(null)
+
         try {
-            setIsSampleLoading(true)
             const response = await fetch(url)
+            if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
             const blob = await response.blob()
-            const file = new File([blob], `sample-${type}.jpg`, { type: 'image/jpeg' })
+            const file = new File([blob], `sample-${type}.jpg`, { type: blob.type || 'image/jpeg' })
 
             if (type === 'user') {
                 setUserFile(file)
@@ -151,10 +155,9 @@ export default function CelebritySelfieClient() {
                 setCelebrityPreview(url)
             }
             setGeneratedImage(null)
-            setError(null)
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading sample image:', err)
-            setError('Failed to load sample image.')
+            setError(`Failed to load sample image. Error: ${err.message}. Please enable CORS on your S3 bucket or upload manually.`)
         } finally {
             setIsSampleLoading(false)
         }
