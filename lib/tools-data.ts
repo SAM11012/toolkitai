@@ -10,6 +10,7 @@ import {
     Type,
     Shirt,
     Mic,
+    Scissors,
 } from 'lucide-react'
 
 // Available Tools - Ready to use
@@ -52,6 +53,14 @@ export const availableTools = [
         description: 'Create amazing selfies with your favorite celebrities using AI face swap.',
         icon: Camera,
         href: '/tools/celebrity-selfie',
+        category: 'image' as const,
+    },
+    {
+        id: 'hairstyle-grid',
+        name: 'Hairstyle Grid',
+        description: 'See yourself with 9 different hairstyles in a beautiful 3x3 grid using AI.',
+        icon: Scissors,
+        href: '/tools/hairstyle-grid',
         category: 'image' as const,
     },
 ]

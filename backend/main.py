@@ -609,6 +609,126 @@ NOTE:
         logger.error(f"Unexpected error in celebrity selfie: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/hairstyle-grid")
+async def hairstyle_grid(
+    source_image: UploadFile = File(...)
+):
+    """
+    Hairstyle Grid endpoint - generates a 3x3 grid with 9 different hairstyles
+    User uploads their photo and gets back a grid showing them with different hairstyles
+    """
+    try:
+        logger.info(f"Processing hairstyle grid request. User photo: {source_image.filename}")
+        
+        # Read image
+        source_bytes = await source_image.read()
+        source_pil = Image.open(io.BytesIO(source_bytes))
+        
+        # For a 3x3 grid, use 1:1 aspect ratio (square)
+        aspect_ratio = "1:1"
+        
+        logger.info(f"Using aspect ratio: {aspect_ratio} for 3x3 grid")
+        
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            logger.error("GOOGLE_API_KEY not set")
+            raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not set")
+
+        client = genai.Client(api_key=api_key)
+        
+        # Prompt for generating 3x3 hairstyle grid
+        prompt = """Hairstyle Grid Task:
+Analyze the uploaded photo (FIRST IMAGE) of a person.
+Generate a 3x3 grid image showing the same person with 9 different hairstyles.
+
+Requirements:
+1. The grid must be exactly 3 rows by 3 columns (9 total images).
+2. Each cell in the grid should show the person with a DIFFERENT hairstyle.
+3. Keep the person's face, facial features, expression, pose, clothing, and background EXACTLY the same across all 9 variations. ONLY change the hairstyle.
+4. The hairstyles should be diverse and include:
+   - Short styles (buzz cut, crew cut, short textured)
+   - Medium styles (parted, slicked back, wavy, curly)
+   - Long styles (straight long, wavy long, braided/cornrows, top knot/man bun)
+   - Various textures (straight, wavy, curly, braided)
+5. Ensure high photorealism - each hairstyle should look natural and realistic.
+6. Maintain consistent lighting, shadows, and perspective across all 9 images.
+7. The grid should be perfectly aligned with equal spacing between cells.
+8. Each hairstyle should be clearly visible and distinct from the others.
+9. The person's identity and all other features must remain identical - only the hair changes.
+
+Output: A single image containing a 3x3 grid with 9 different hairstyle variations of the same person.
+"""
+        
+        logger.info("Sending request to Gemini API for Hairstyle Grid...")
+        response = client.models.generate_content(
+            model="gemini-3-pro-image-preview",
+            contents=[source_pil, prompt],
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio
+                ),
+                safety_settings=[
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH
+                    ),
+                ]
+            )
+        )
+        logger.info("Received response from Gemini API")
+        
+        generated_image_bytes = None
+        
+        if response.parts:
+            for part in response.parts:
+                if part.inline_data:
+                    img = part.as_image()
+                    
+                    # Save to a temporary file
+                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+                        tmp_path = tmp_file.name
+                    
+                    img.save(tmp_path)
+                    
+                    # Add watermark in-place
+                    add_watermark(tmp_path)
+                    
+                    # Read back the watermarked image
+                    with open(tmp_path, "rb") as f:
+                        generated_image_bytes = f.read()
+                    
+                    os.remove(tmp_path)
+                    break
+        
+        if not generated_image_bytes:
+            text_response = ""
+            if response.parts:
+                for part in response.parts:
+                    if part.text:
+                        text_response += part.text
+            
+            logger.warning(f"No image generated. Text response: {text_response}")
+            
+            if text_response:
+                raise HTTPException(status_code=400, detail=f"Generation failed: {text_response}")
+            else:
+                raise HTTPException(status_code=500, detail="Failed to generate image. The model might have failed to process the request.")
+             
+        logger.info("Hairstyle grid successful, returning image.")
+        return Response(content=generated_image_bytes, media_type="image/png")
+        
+    except HTTPException as he:
+        logger.error(f"HTTP Exception in hairstyle grid: {he.detail}")
+        raise he
+    except Exception as e:
+        logger.error(f"Unexpected error in hairstyle grid: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 class PodcastRequest(BaseModel):
     topic: str
     language: str = "en-US"
