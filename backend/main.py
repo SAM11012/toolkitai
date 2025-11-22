@@ -30,7 +30,7 @@ def add_watermark(image_path: str, text: str = "toolkitai.io") -> None:
         text: Watermark text
     """
     # Load the image
-    img = Image.open(image_path)z
+    img = Image.open(image_path)
     
     # Convert to RGB if needed (most common format)
     if img.mode not in ('RGB', 'RGBA'):
