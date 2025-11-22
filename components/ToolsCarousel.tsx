@@ -116,8 +116,8 @@ export function ToolsCarousel({ tools, requireAuth = false }: ToolsCarouselProps
                             key={index}
                             onClick={() => goToSlide(index)}
                             className={`w-2 h-2 rounded-full transition-all ${index === currentIndex
-                                    ? 'bg-indigo-600 w-8'
-                                    : 'bg-gray-300 hover:bg-gray-400'
+                                ? 'bg-indigo-600 w-8'
+                                : 'bg-gray-300 hover:bg-gray-400'
                                 }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />
