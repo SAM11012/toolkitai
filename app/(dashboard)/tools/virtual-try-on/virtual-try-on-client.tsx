@@ -81,7 +81,7 @@ export default function VirtualTryOnClient() {
 
             // Update status after 5 seconds
             const timeout1 = setTimeout(() => {
-                setLoadingStep('Fitting clothes (no tailoring needed!)...')
+                setLoadingStep('Fitting clothes ...')
             }, 5000)
 
             // Update status after 12 seconds
