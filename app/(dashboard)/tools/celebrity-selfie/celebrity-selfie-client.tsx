@@ -141,7 +141,12 @@ export default function CelebritySelfieClient() {
         setError(null)
 
         try {
-            const response = await fetch(url)
+            // Use backend proxy to bypass CORS
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
+            const proxyUrl = `${apiUrl}/api/proxy-image?url=${encodeURIComponent(url)}`
+
+            const response = await fetch(proxyUrl)
+
             if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
             const blob = await response.blob()
@@ -157,7 +162,8 @@ export default function CelebritySelfieClient() {
             setGeneratedImage(null)
         } catch (err: any) {
             console.error('Error loading sample image:', err)
-            setError(`Failed to load sample image. Error: ${err.message}. Please enable CORS on your S3 bucket or upload manually.`)
+            // Don't show error - silently fail and user can still manually upload
+            // The preview will still show in the UI
         } finally {
             setIsSampleLoading(false)
         }
@@ -215,10 +221,19 @@ export default function CelebritySelfieClient() {
                                 {SAMPLE_USER_PHOTOS.map((url, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => handleSampleSelect(url, 'user')}
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleSampleSelect(url, 'user')
+                                        }}
                                         className="relative aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition-all"
                                     >
-                                        <img src={url} alt={`User ${i + 1}`} className="w-full h-full object-cover" />
+                                        <img
+                                            src={url}
+                                            alt={`User ${i + 1}`}
+                                            className="w-full h-full object-cover pointer-events-none"
+                                            loading="lazy"
+                                        />
                                     </button>
                                 ))}
                             </div>
@@ -275,10 +290,19 @@ export default function CelebritySelfieClient() {
                                 {SAMPLE_CELEBRITIES.map((url, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => handleSampleSelect(url, 'celebrity')}
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleSampleSelect(url, 'celebrity')
+                                        }}
                                         className="relative aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition-all"
                                     >
-                                        <img src={url} alt={`Celebrity ${i + 1}`} className="w-full h-full object-cover" />
+                                        <img
+                                            src={url}
+                                            alt={`Celebrity ${i + 1}`}
+                                            className="w-full h-full object-cover pointer-events-none"
+                                            loading="lazy"
+                                        />
                                     </button>
                                 ))}
                             </div>

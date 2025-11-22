@@ -10,6 +10,7 @@ import base64
 import tempfile
 import logging
 import wave
+import urllib.request
 
 from google import genai
 from google.genai import types
@@ -686,6 +687,32 @@ async def podcast_creator(request: PodcastRequest):
 
     except Exception as e:
         logger.error(f"Error in podcast creator: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/proxy-image")
+async def proxy_image(url: str):
+    """
+    Proxy endpoint to fetch images from S3, bypassing CORS issues
+    """
+    try:
+        # Validate URL is from our S3 bucket for security
+        if not url.startswith("https://s3.us-west-2.amazonaws.com/toolkitai.io/"):
+            raise HTTPException(status_code=400, detail="Invalid image URL")
+        
+        logger.info(f"Proxying image request: {url}")
+        
+        # Fetch image from S3
+        with urllib.request.urlopen(url) as response:
+            image_data = response.read()
+            content_type = response.headers.get('Content-Type', 'image/jpeg')
+        
+        return Response(content=image_data, media_type=content_type)
+        
+    except urllib.error.HTTPError as e:
+        logger.error(f"HTTP error fetching image: {e}")
+        raise HTTPException(status_code=e.code, detail=f"Failed to fetch image: {e.reason}")
+    except Exception as e:
+        logger.error(f"Error proxying image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
