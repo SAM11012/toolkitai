@@ -94,8 +94,8 @@ export default function CelebritySelfieClient() {
                 setLoadingStep('Adding finishing touches...')
             }, 12000)
 
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
-            const response = await fetch(`${apiUrl}/api/celebrity-selfie`, {
+            // Call Next.js API route (which handles auth and forwards to backend)
+            const response = await fetch('/api/celebrity-selfie', {
                 method: 'POST',
                 body: formData,
             })
@@ -139,8 +139,7 @@ export default function CelebritySelfieClient() {
 
     // Helper function to get proxy URL for images
     const getProxyUrl = (url: string): string => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
-        return `${apiUrl}/api/proxy-image?url=${encodeURIComponent(url)}`
+        return `/api/proxy-image?url=${encodeURIComponent(url)}`
     }
 
     // Handle image load errors for thumbnails

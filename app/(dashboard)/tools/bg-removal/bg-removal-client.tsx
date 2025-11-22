@@ -74,16 +74,18 @@ export default function BgRemovalClient() {
                 setLoadingStep('Removing background...')
             }, 3000)
 
-            // Use environment variable or fallback to EC2 IP
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
-            const response = await fetch(`${apiUrl}/api/bg-removal`, {
+            // Call Next.js API route (which handles auth and forwards to backend)
+            const response = await fetch('/api/bg-removal', {
                 method: 'POST',
                 body: formData,
             })
 
             clearTimeout(timeout)
 
-            if (!response.ok) throw new Error('Failed to process image')
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || errorData.detail || 'Failed to process image')
+            }
 
             const blob = await response.blob()
             const url = URL.createObjectURL(blob)

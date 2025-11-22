@@ -89,8 +89,8 @@ export default function VirtualTryOnClient() {
                 setLoadingStep('Adding finishing touches...')
             }, 12000)
 
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
-            const response = await fetch(`${apiUrl}/api/virtual-try-on`, {
+            // Call Next.js API route (which handles auth and forwards to backend)
+            const response = await fetch('/api/virtual-try-on', {
                 method: 'POST',
                 body: formData,
             })

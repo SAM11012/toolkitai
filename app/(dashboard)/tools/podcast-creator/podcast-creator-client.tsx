@@ -91,11 +91,8 @@ export default function PodcastCreatorClient() {
         setError(null)
 
         try {
-            // Use environment variable or fallback to EC2 IP
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://100.30.3.16'
-
-            // Call the backend API
-            const response = await fetch(`${apiUrl}/api/podcast-creator`, {
+            // Call Next.js API route (which handles auth and forwards to backend)
+            const response = await fetch('/api/podcast-creator', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +101,8 @@ export default function PodcastCreatorClient() {
             })
 
             if (!response.ok) {
-                throw new Error('Failed to generate podcast')
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || errorData.detail || 'Failed to generate podcast')
             }
 
             const data = await response.json()

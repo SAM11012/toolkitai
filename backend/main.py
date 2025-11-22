@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, Response, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, Response, HTTPException, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from rembg import remove
 from PIL import Image, ImageDraw, ImageFont
@@ -22,6 +23,38 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+# Authentication Middleware
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Skip auth for root endpoint and health checks
+        if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/redoc"]:
+            return await call_next(request)
+        
+        # Check for X-User-ID header (set by Next.js API routes)
+        user_id = request.headers.get("X-User-ID")
+        if not user_id:
+            logger.warning(f"Unauthorized request to {request.url.path} - missing X-User-ID header")
+            return Response(
+                content='{"detail": "Unauthorized. Missing authentication header."}',
+                status_code=401,
+                media_type="application/json"
+            )
+        
+        # Optional: Verify API key if set
+        api_key = os.getenv("INTERNAL_API_KEY")
+        if api_key:
+            provided_key = request.headers.get("X-API-Key")
+            if provided_key != api_key:
+                logger.warning(f"Unauthorized request to {request.url.path} - invalid API key")
+                return Response(
+                    content='{"detail": "Unauthorized. Invalid API key."}',
+                    status_code=401,
+                    media_type="application/json"
+                )
+        
+        logger.info(f"Authenticated request from user: {user_id} to {request.url.path}")
+        return await call_next(request)
 
 def add_watermark(image_path: str, text: str = "toolkitai.io") -> None:
     """
@@ -85,6 +118,9 @@ allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:3000,http://localhost:3001"
 ).split(",")
+
+# Add authentication middleware (before CORS)
+app.add_middleware(AuthMiddleware)
 
 # Configure CORS
 app.add_middleware(
