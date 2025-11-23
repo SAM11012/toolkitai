@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, RefreshCw, Upload, Download, Scissors } from 'lucide-react'
@@ -22,56 +22,6 @@ export default function HairstyleGridClient() {
 
     const [isSampleLoading, setIsSampleLoading] = useState(false)
     const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set())
-    const [imageCache, setImageCache] = useState<Map<string, string>>(new Map())
-
-    // Preload images with authentication
-    useEffect(() => {
-        const blobUrls: string[] = []
-
-        const preloadImages = async () => {
-            const newCache = new Map<string, string>()
-
-            for (const url of SAMPLE_PHOTOS) {
-                try {
-                    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
-                    const response = await fetch(proxyUrl, {
-                        credentials: 'include', // Ensure cookies are sent
-                    })
-
-                    if (response.ok) {
-                        const blob = await response.blob()
-                        const blobUrl = URL.createObjectURL(blob)
-                        blobUrls.push(blobUrl)
-                        newCache.set(url, blobUrl)
-                    } else {
-                        setImageLoadErrors((prev: Set<string>) => new Set(prev).add(url))
-                    }
-                } catch (err) {
-                    console.error(`Failed to preload image ${url}:`, err)
-                    setImageLoadErrors((prev: Set<string>) => new Set(prev).add(url))
-                }
-            }
-
-            setImageCache(newCache)
-        }
-
-        preloadImages()
-
-        // Cleanup blob URLs on unmount
-        return () => {
-            blobUrls.forEach(url => URL.revokeObjectURL(url))
-        }
-    }, [])
-
-    // Helper function to get proxy URL for images (use cached blob URL if available)
-    const getProxyUrl = (url: string): string | null => {
-        // Only return cached blob URL - never fall back to API route for <img> tags
-        if (imageCache.has(url)) {
-            return imageCache.get(url)!
-        }
-        // Return null if not cached yet (component will show placeholder)
-        return null
-    }
 
     // Handle image load errors for thumbnails
     const handleImageError = (url: string) => {
@@ -84,10 +34,8 @@ export default function HairstyleGridClient() {
         setError(null)
 
         try {
-            // Use Next.js API route (which handles auth and forwards to backend)
-            const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
-
-            const response = await fetch(proxyUrl)
+            // Fetch image directly from URL (no proxy needed for external URLs)
+            const response = await fetch(url)
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: Failed to fetch image`)
@@ -270,18 +218,14 @@ export default function HairstyleGridClient() {
                                                             <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs text-center p-2">
                                                                 Failed to load
                                                             </div>
-                                                        ) : getProxyUrl(url) ? (
+                                                        ) : (
                                                             <img
-                                                                src={getProxyUrl(url)!}
+                                                                src={url}
                                                                 alt={`Sample ${i + 1}`}
                                                                 className="w-full h-full object-cover pointer-events-none"
                                                                 loading="lazy"
                                                                 onError={() => handleImageError(url)}
                                                             />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300 text-xs text-center p-2">
-                                                                Loading...
-                                                            </div>
                                                         )}
                                                     </button>
                                                 ))}
