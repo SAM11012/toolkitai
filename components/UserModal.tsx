@@ -94,7 +94,7 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
             {/* Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+                    className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
                     onClick={onClose}
                 />
             )}
@@ -102,10 +102,10 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
             {/* Sidebar */}
             <div
                 className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
-                    } ${!isOpen ? 'pointer-events-none' : ''}`}
+                    } ${!isOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-                <div className="flex h-full flex-col overflow-y-auto">
+                <div className="flex h-full flex-col overflow-hidden">
                     {/* Header */}
                     <div className="sticky top-0 z-10 border-b border-gray-200 bg-white px-6 py-4">
                         <div className="flex items-center justify-between">
@@ -129,7 +129,7 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 px-6 py-6 space-y-6">
+                    <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto">
                         {/* Message */}
                         {message && (
                             <div
