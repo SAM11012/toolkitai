@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, User, Mail, Lock, Coins, LogOut } from 'lucide-react'
+import { X, User, Mail, Coins, LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom' // <--- 1. Import this
@@ -23,11 +23,7 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
     // Existing state
     const [email, setEmail] = useState('')
     const [displayName, setDisplayName] = useState('')
-    const [newPassword, setNewPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
-    const [isChangingPassword, setIsChangingPassword] = useState(false)
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     // 3. Handle hydration (ensure we only run portal on client)
     useEffect(() => {
@@ -56,8 +52,6 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
         }
     }, [user, isOpen])
 
-    // ... (Your existing handleChangePassword and handleSignOut functions remain unchanged)
-    const handleChangePassword = async () => { /* ... */ }
     const handleSignOut = async () => {
         setIsLoading(true)
         await supabase.auth.signOut()
@@ -102,45 +96,68 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
                         </div>
                     </div>
 
-                    {/* ... (Keep your Content Section exactly as is) ... */}
+                    {/* Content */}
                     <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto">
-                        {message && (
-                            <div className={`p-3 rounded-lg text-sm ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                                {message.text}
-                            </div>
-                        )}
+                        {/* User Info Section */}
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Name</label>
-                                <Input value={displayName} disabled className="bg-gray-50" />
+                                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    <User className="w-4 h-4 text-indigo-600" />
+                                    Name
+                                </label>
+                                <Input value={displayName} disabled className="bg-gray-50 cursor-not-allowed" />
+                                <p className="text-xs text-gray-500">
+                                    Name is managed by your Google account
+                                </p>
                             </div>
-                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Email</label>
-                                <Input value={email} disabled className="bg-gray-50" />
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    <Mail className="w-4 h-4 text-indigo-600" />
+                                    Email
+                                </label>
+                                <Input value={email} disabled className="bg-gray-50 cursor-not-allowed" />
+                                <p className="text-xs text-gray-500">
+                                    Email is managed by your Google account
+                                </p>
                             </div>
-                        </div>
-                        
-                        {/* Password Section */}
-                        <div className="space-y-3 border-t pt-4">
-                            <label className="text-sm font-medium text-gray-700">Change Password</label>
-                             <Input 
-                                type="password" 
-                                value={newPassword} 
-                                onChange={(e) => setNewPassword(e.target.value)} 
-                                placeholder="New password"
-                             />
-                             <Input 
-                                type="password" 
-                                value={confirmPassword} 
-                                onChange={(e) => setConfirmPassword(e.target.value)} 
-                                placeholder="Confirm new password"
-                             />
-                             <Button onClick={handleChangePassword} className="w-full" variant="outline">Update Password</Button>
                         </div>
 
-                         <div className="border-t pt-4">
-                            <Button onClick={handleSignOut} variant="destructive" className="w-full">Sign Out</Button>
-                         </div>
+                        {/* Billion Section */}
+                        <div className="space-y-2 border-t pt-4">
+                            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                <Coins className="w-4 h-4 text-indigo-600" />
+                                Billion
+                            </label>
+                            <Input
+                                type="text"
+                                value="Coming soon"
+                                disabled
+                                className="bg-gray-50 cursor-not-allowed"
+                            />
+                            <p className="text-xs text-gray-500">This feature is currently disabled</p>
+                        </div>
+
+                        {/* Sign Out Button */}
+                        <div className="border-t pt-4">
+                            <Button
+                                onClick={handleSignOut}
+                                disabled={isLoading}
+                                variant="destructive"
+                                className="w-full"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Signing out...
+                                    </>
+                                ) : (
+                                    <>
+                                        <LogOut className="w-4 h-4" />
+                                        Sign Out
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
