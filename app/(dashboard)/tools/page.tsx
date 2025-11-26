@@ -82,7 +82,7 @@ export default function ToolsPage() {
             Available Now
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {availableTools.map((tool) => (
+            {availableTools.map((tool, index) => (
               <ToolCard
                 key={tool.id}
                 name={tool.name}
@@ -91,6 +91,7 @@ export default function ToolsPage() {
                 href={tool.href}
                 featured={true}
                 onClick={handleToolClick}
+                index={index}
               />
             ))}
           </div>

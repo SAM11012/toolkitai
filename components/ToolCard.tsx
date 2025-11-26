@@ -1,68 +1,151 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LucideIcon } from 'lucide-react'
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LucideIcon, ArrowRight, Sparkles, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ToolCardProps {
-  name: string
-  description: string
-  icon: LucideIcon
-  href: string
-  featured?: boolean
-  onClick?: (href: string) => void
+  name: string;
+  description: string;
+  icon: LucideIcon;
+  href: string;
+  featured?: boolean;
+  onClick?: (href: string) => void;
+  index?: number;
 }
 
-export function ToolCard({ name, description, icon: Icon, href, featured = false, onClick }: ToolCardProps) {
+const colorVariants = [
+  {
+    border: "hover:border-indigo-500/50",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    gradient: "from-indigo-500 to-violet-400",
+    shadow: "hover:shadow-indigo-500/10",
+  },
+  {
+    border: "hover:border-indigo-500/50",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    gradient: "from-indigo-500 to-violet-400",
+    shadow: "hover:shadow-indigo-500/10",
+  },
+  {
+    border: "hover:border-indigo-500/50",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    gradient: "from-indigo-500 to-violet-400",
+    shadow: "hover:shadow-indigo-500/10",
+  },
+  {
+    border: "hover:border-indigo-500/50",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    gradient: "from-indigo-500 to-violet-400",
+    shadow: "hover:shadow-indigo-500/10",
+  },
+  {
+    border: "hover:border-indigo-500/50",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    gradient: "from-indigo-500 to-violet-400",
+    shadow: "hover:shadow-indigo-500/10",
+  },
+  {
+    border: "hover:border-indigo-500/50",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    gradient: "from-indigo-500 to-violet-400",
+    shadow: "hover:shadow-indigo-500/10",
+  },
+];
+
+export function ToolCard({
+  name,
+  description,
+  icon: Icon,
+  href,
+  featured = false,
+  onClick,
+  index = 0,
+}: ToolCardProps) {
   const handleClick = () => {
     if (onClick) {
-      onClick(href)
+      onClick(href);
     }
-  }
+  };
 
-  if (featured) {
-    return (
-      <div onClick={handleClick} className="group cursor-pointer">
-        <Card className="relative h-full overflow-hidden transition-all duration-400 ease-out hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1.5 border border-gray-100 hover:border-indigo-200 cursor-pointer bg-white">
-          {/* Gradient Glow Effect on Hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-          <CardHeader className="space-y-4 relative z-10">
-            <div className="bg-indigo-50 p-4 rounded-2xl w-fit transition-all duration-300 shadow-sm group-hover:scale-110 group-hover:bg-indigo-600 group-hover:shadow-indigo-500/30 text-indigo-600 group-hover:text-white">
-              <Icon className="w-8 h-8" strokeWidth={2} />
-            </div>
-            <CardTitle className="text-xl font-bold tracking-tight group-hover:text-indigo-600 transition-colors">
-              {name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <CardDescription className="text-base leading-relaxed text-gray-600">{description}</CardDescription>
-            {/* Action Hint */}
-            <div className="mt-6 flex items-center text-sm font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-              Try it now <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  const variant = colorVariants[index % colorVariants.length];
 
   return (
-    <div onClick={handleClick} className="group cursor-pointer">
-      <Card className="relative h-full overflow-hidden transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200 cursor-pointer bg-white border-gray-100">
-        {/* Subtle Glow on Hover */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 via-transparent to-purple-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none" />
+    <div onClick={handleClick} className="group cursor-pointer h-full">
+      <Card
+        className={cn(
+          "relative h-full overflow-hidden transition-all duration-300 ease-out bg-white border-2 border-transparent p-0 gap-0",
+          "hover:-translate-y-1.5",
+          variant.border,
+          variant.shadow,
+          "shadow-sm hover:shadow-xl"
+        )}
+      >
+        {/* Left Color Border */}
+        <div
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b transition-all duration-300",
+            variant.gradient
+          )}
+        />
 
-        <CardHeader className="space-y-3 relative z-10">
-          <div className="bg-indigo-50 p-3 rounded-xl w-fit transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-100 text-indigo-600">
-            <Icon className="w-6 h-6" strokeWidth={2} />
+        <CardHeader className="pb-4 pt-6 px-6">
+          <div className="flex justify-between items-start mb-2">
+            <div
+              className={cn(
+                "p-3 rounded-xl transition-all duration-300 group-hover:scale-110",
+                variant.bg,
+                variant.text
+              )}
+            >
+              <Icon className="w-6 h-6" strokeWidth={2} />
+            </div>
+            {featured && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r text-white shadow-sm",
+                  variant.gradient
+                )}
+              >
+                <Sparkles className="w-3 h-3" />
+                New
+              </span>
+            )}
+            {!featured && index % 3 === 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                <Zap className="w-3 h-3" />
+                Popular
+              </span>
+            )}
           </div>
-          <CardTitle className="text-lg font-semibold tracking-tight group-hover:text-indigo-600 transition-colors">
+
+          <h3 className="text-xl font-bold text-gray-900 group-hover:text-gray-700 transition-colors line-clamp-1">
             {name}
-          </CardTitle>
+          </h3>
         </CardHeader>
-        <CardContent className="relative z-10">
-          <CardDescription className="text-sm leading-relaxed text-gray-600">{description}</CardDescription>
+
+        <CardContent className="px-6 pb-6">
+          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-6">
+            {description}
+          </p>
+
+          <div className="flex items-center justify-end pt-4 border-t border-gray-100">
+            <div
+              className={cn(
+                "flex items-center gap-1 text-sm font-semibold transition-all duration-300 transform translate-x-0 group-hover:translate-x-1",
+                variant.text
+              )}
+            >
+              Try now
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
