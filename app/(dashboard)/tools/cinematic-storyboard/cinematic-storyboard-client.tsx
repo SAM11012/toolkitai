@@ -257,10 +257,18 @@ export default function CinematicStoryboardClient() {
                   <Textarea
                     placeholder="Add specific camera angles or instructions..."
                     value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 3000) {
+                        setCustomPrompt(e.target.value);
+                      }
+                    }}
                     rows={3}
                     className="resize-none"
+                    maxLength={3000}
                   />
+                  <p className="text-xs text-gray-500 mt-2">
+                    {customPrompt.length}/3000 characters
+                  </p>
                 </div>
 
                 <Button
