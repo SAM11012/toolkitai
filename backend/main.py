@@ -72,15 +72,16 @@ def add_watermark(image_path: str, text: str = "toolkitai.io") -> None:
     # Load the image
     img = Image.open(image_path)
 
-    # Convert to RGB if needed (most common format)
+    # Convert to RGBA to support transparency
     if img.mode not in ("RGB", "RGBA"):
-        img = img.convert("RGB")
+        img = img.convert("RGBA")
 
-    # Create drawing context
-    draw = ImageDraw.Draw(img)
+    # Create a new image with alpha channel for overlay
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
 
     width, height = img.size
-    font_size = max(12, int(width * 0.02))
+    font_size = max(10, int(width * 0.015))
 
     # Try to load a nice font
     try:
@@ -102,22 +103,33 @@ def add_watermark(image_path: str, text: str = "toolkitai.io") -> None:
     text_height = bbox[3] - bbox[1]
 
     # Calculate position (bottom-right with padding)
-    padding = max(10, int(width * 0.01))
+    padding = max(8, int(width * 0.015))
     x = width - text_width - padding
     y = height - text_height - padding
 
-    # Draw semi-transparent background
-    bg_padding = 5
+    # Draw semi-transparent background (more subtle)
+    bg_padding = 6
     background_bbox = [
         x - bg_padding,
         y - bg_padding,
         x + text_width + bg_padding,
         y + text_height + bg_padding,
     ]
-    draw.rectangle(background_bbox, fill=(0, 0, 0))
+    # Use semi-transparent black background (alpha = 180/255 ≈ 70% opacity)
+    draw.rectangle(background_bbox, fill=(0, 0, 0, 180))
 
-    # Draw white text
-    draw.text((x, y), text, fill=(255, 255, 255), font=font)
+    # Draw white text with slight transparency (alpha = 240/255 ≈ 94% opacity)
+    draw.text((x, y), text, fill=(255, 255, 255, 240), font=font)
+
+    # Composite the overlay onto the original image
+    img = Image.alpha_composite(img.convert("RGBA"), overlay)
+
+    # Convert back to RGB if original was RGB
+    if img.mode == "RGBA":
+        # Create white background for images that need it
+        background = Image.new("RGB", img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[3])  # Use alpha channel as mask
+        img = background
 
     # Save back to the same file
     img.save(image_path)
