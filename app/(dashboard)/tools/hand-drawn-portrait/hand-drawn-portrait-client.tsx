@@ -205,13 +205,14 @@ export default function HandDrawnPortraitClient() {
                   <img
                     src={processedUrl}
                     alt="Hand-Drawn Portrait"
-                    className="object-contain"
+                    className="object-contain hand-drawn-portrait-image"
                     style={{
-                      width: "100%",
-                      height: "100%",
                       maxWidth: "100%",
                       maxHeight: "calc(100vh - 250px)",
+                      width: "auto",
+                      height: "auto",
                       objectFit: "contain",
+                      imageRendering: "-webkit-optimize-contrast",
                     }}
                   />
                 ) : (
@@ -219,13 +220,14 @@ export default function HandDrawnPortraitClient() {
                   <img
                     src={previewUrl!}
                     alt="Preview"
-                    className="object-contain"
+                    className="object-contain hand-drawn-portrait-image"
                     style={{
-                      width: "100%",
-                      height: "100%",
                       maxWidth: "100%",
                       maxHeight: "calc(100vh - 250px)",
+                      width: "auto",
+                      height: "auto",
                       objectFit: "contain",
+                      imageRendering: "-webkit-optimize-contrast",
                     }}
                   />
                 )}
@@ -267,6 +269,16 @@ export default function HandDrawnPortraitClient() {
           </div>
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .hand-drawn-portrait-image {
+            image-rendering: -webkit-optimize-contrast !important;
+            image-rendering: auto !important;
+            -ms-interpolation-mode: nearest-neighbor !important;
+          }
+        `
+      }} />
     </div>
   );
 }
