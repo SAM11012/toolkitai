@@ -125,7 +125,7 @@ export default function HandDrawnPortraitClient() {
         {/* Main Canvas / Preview Area */}
         <div
           className="w-full flex items-center justify-center relative overflow-hidden py-4 md:py-8 flex-1"
-          style={{ minHeight: previewUrl ? "500px" : "400px" }}
+          style={{ minHeight: previewUrl ? "600px" : "400px" }}
         >
           {/* Floating Buttons */}
           {previewUrl && (
@@ -198,8 +198,8 @@ export default function HandDrawnPortraitClient() {
             </div>
           ) : (
             // Display State - Result or Preview
-            <div className="relative w-full flex items-center justify-center p-4 md:p-8 flex-1 min-h-[400px]">
-              <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg flex items-center justify-center relative max-w-full max-h-full w-auto h-auto">
+            <div className="relative w-full flex items-center justify-center p-4 md:p-8 flex-1" style={{ minHeight: "600px" }}>
+              <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg flex items-center justify-center relative" style={{ width: "100%", maxWidth: "100%", height: "100%", minHeight: "500px" }}>
                 {processedUrl ? (
                   // Generated Result
                   <img
@@ -207,10 +207,11 @@ export default function HandDrawnPortraitClient() {
                     alt="Hand-Drawn Portrait"
                     className="object-contain"
                     style={{
+                      width: "100%",
+                      height: "100%",
                       maxWidth: "100%",
-                      maxHeight: "calc(100vh - 400px)",
-                      width: "auto",
-                      height: "auto",
+                      maxHeight: "calc(100vh - 250px)",
+                      objectFit: "contain",
                     }}
                   />
                 ) : (
@@ -220,10 +221,11 @@ export default function HandDrawnPortraitClient() {
                     alt="Preview"
                     className="object-contain"
                     style={{
+                      width: "100%",
+                      height: "100%",
                       maxWidth: "100%",
-                      maxHeight: "calc(100vh - 400px)",
-                      width: "auto",
-                      height: "auto",
+                      maxHeight: "calc(100vh - 250px)",
+                      objectFit: "contain",
                     }}
                   />
                 )}
