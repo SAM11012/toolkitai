@@ -9,10 +9,6 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
-import {
-  ReactCompareSlider,
-  ReactCompareSliderImage,
-} from "react-compare-slider";
 
 export default function HandDrawnPortraitClient() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -201,44 +197,20 @@ export default function HandDrawnPortraitClient() {
               </div>
             </div>
           ) : (
-            // Display State - Compare Slider or Preview
+            // Display State - Result or Preview
             <div className="relative w-full flex items-center justify-center p-4 md:p-8 flex-1 min-h-[400px]">
               <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg flex items-center justify-center relative max-w-full max-h-full w-auto h-auto">
                 {processedUrl ? (
-                  // Compare Mode - Slider
-                  <ReactCompareSlider
-                    itemOne={
-                      <ReactCompareSliderImage
-                        src={previewUrl!}
-                        alt="Original"
-                        style={{
-                          objectFit: "contain",
-                          maxWidth: "100%",
-                          maxHeight: "calc(100vh - 400px)",
-                          width: "auto",
-                          height: "auto",
-                        }}
-                      />
-                    }
-                    itemTwo={
-                      <ReactCompareSliderImage
-                        src={processedUrl}
-                        alt="Hand-Drawn Portrait"
-                        style={{
-                          objectFit: "contain",
-                          maxWidth: "100%",
-                          maxHeight: "calc(100vh - 400px)",
-                          width: "auto",
-                          height: "auto",
-                        }}
-                      />
-                    }
+                  // Generated Result
+                  <img
+                    src={processedUrl}
+                    alt="Hand-Drawn Portrait"
+                    className="object-contain"
                     style={{
-                      display: "flex",
-                      width: "auto",
-                      height: "auto",
                       maxWidth: "100%",
                       maxHeight: "calc(100vh - 400px)",
+                      width: "auto",
+                      height: "auto",
                     }}
                   />
                 ) : (
