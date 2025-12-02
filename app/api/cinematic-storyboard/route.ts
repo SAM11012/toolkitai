@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(request: Request) {
     try {
         // 1. Authenticate user
-        debugger;
         const supabase = await createClient()
         const {
             data: { user },
@@ -32,8 +31,7 @@ export async function POST(request: Request) {
 
         // 3. Forward to Python FastAPI backend
         const PYTHON_API_URL = process.env.PYTHON_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        debugger;
-        console.log('PYTHON_API_URL', PYTHON_API_URL)
+
         const response = await fetch(`${PYTHON_API_URL}/api/cinematic-storyboard`, {
             method: 'POST',
             body: formData,

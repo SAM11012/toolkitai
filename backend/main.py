@@ -23,8 +23,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
-from dotenv import load_dotenv
-load_dotenv()
 
 # Authentication Middleware
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -130,7 +128,7 @@ app = FastAPI(title="ToolkitAI API")
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001"
 ).split(",")
-print(allowed_origins)
+
 # Add authentication middleware (before CORS)
 app.add_middleware(AuthMiddleware)
 
