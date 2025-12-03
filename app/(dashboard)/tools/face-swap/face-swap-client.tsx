@@ -14,6 +14,7 @@ export default function FaceSwapClient() {
 
     const [generatedImage, setGeneratedImage] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [loadingStep, setLoadingStep] = useState('')
     const [error, setError] = useState<string | null>(null)
 
     const validateImageFile = (file: File): string | null => {
@@ -62,17 +63,31 @@ export default function FaceSwapClient() {
 
         setIsLoading(true)
         setError(null)
+        setLoadingStep('Analyzing faces...')
 
         try {
             const formData = new FormData()
             formData.append('source_image', sourceFile)
             formData.append('target_image', targetFile)
 
+            // Update status after 5 seconds
+            const timeout1 = setTimeout(() => {
+                setLoadingStep('Swapping faces...')
+            }, 5000)
+
+            // Update status after 12 seconds
+            const timeout2 = setTimeout(() => {
+                setLoadingStep('Adding finishing touches...')
+            }, 12000)
+
             // Call Next.js API route (which handles auth and forwards to backend)
             const response = await fetch('/api/face-swap', {
                 method: 'POST',
                 body: formData,
             })
+
+            clearTimeout(timeout1)
+            clearTimeout(timeout2)
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}))
@@ -87,6 +102,7 @@ export default function FaceSwapClient() {
             setError(err.message || 'Failed to process image. Please try again.')
         } finally {
             setIsLoading(false)
+            setLoadingStep('')
         }
     }
 
@@ -253,41 +269,36 @@ export default function FaceSwapClient() {
             </div>
 
             {/* Action Button */}
-            <div className="space-y-4">
-                <div className="bg-amber-50 text-amber-800 p-4 rounded-lg text-center border border-amber-200 font-medium max-w-md mx-auto">
-                    ⚠️ Integration still in progress. This feature is currently disabled.
-                </div>
-                <div className="flex justify-center">
-                    <Button
-                        size="lg"
-                        onClick={handleSwap}
-                        disabled={true}
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 h-12 text-lg shadow-lg hover:shadow-xl transition-all"
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Swapping Faces...
-                            </>
-                        ) : isSampleLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Loading Sample...
-                            </>
-                        ) : (
-                            <>
-                                <RefreshCw className="mr-2 h-5 w-5" />
-                                Swap Faces Now
-                            </>
-                        )}
-                    </Button>
-                </div>
+            <div className="flex justify-center">
+                <Button
+                    size="lg"
+                    onClick={handleSwap}
+                    disabled={!sourceFile || !targetFile || isLoading || isSampleLoading}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 h-12 text-lg shadow-lg hover:shadow-xl transition-all"
+                >
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            {loadingStep || 'Swapping Faces...'}
+                        </>
+                    ) : isSampleLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Loading Sample...
+                        </>
+                    ) : (
+                        <>
+                            <RefreshCw className="mr-2 h-5 w-5" />
+                            Swap Faces Now
+                        </>
+                    )}
+                </Button>
             </div>
 
             {/* Error Message */}
             {error && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center border border-red-200 font-medium">
-                    Error: {error}
+                <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center border border-red-200">
+                    {error}
                 </div>
             )}
 

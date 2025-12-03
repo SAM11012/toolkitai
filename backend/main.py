@@ -15,6 +15,7 @@ import urllib.request
 
 from google import genai
 from google.genai import types
+import replicate
 
 # Configure Logging
 logging.basicConfig(
@@ -254,34 +255,82 @@ async def virtual_try_on(
         9. Do not process any undergarment or inappropriate content requests.
         """
 
-        logger.info("Sending request to Gemini API...")
-        response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
-            contents=[person_pil, garment_pil, prompt],
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                ],
-            ),
+        # Prepare the config (reusable for both models)
+        generate_config = types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
+            safety_settings=[
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+            ],
         )
-        logger.info("Received response from Gemini API")
+
+        # Try primary model first, fallback to secondary on 429
+        response = None
+        model_used = "gemini-3-pro-image-preview"
+        
+        try:
+            logger.info("Sending request to Gemini API (using gemini-3-pro-image-preview)...")
+            response = client.models.generate_content(
+                model="gemini-3-pro-image-preview",
+                contents=[person_pil, garment_pil, prompt],
+                config=generate_config,
+            )
+            logger.info("Received response from Gemini API (gemini-3-pro-image-preview)")
+        except Exception as e:
+            # Check if it's a 429 rate limit error
+            error_str = str(e).lower()
+            status_code = None
+            
+            # Try to extract status code from exception
+            if hasattr(e, 'status_code'):
+                status_code = e.status_code
+            elif hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+                status_code = e.response.status_code
+            elif '429' in error_str or 'rate limit' in error_str or 'too many requests' in error_str:
+                status_code = 429
+            
+            if status_code == 429:
+                logger.warning("Rate limit (429) encountered with gemini-3-pro-image-preview, falling back to gemini-2.5-flash-image")
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash-image",
+                        contents=[person_pil, garment_pil, prompt],
+                        config=generate_config,
+                    )
+                    model_used = "gemini-2.5-flash-image"
+                    logger.info("Received response from Gemini API (gemini-2.5-flash-image fallback)")
+                except Exception as fallback_error:
+                    logger.error(f"Fallback model also failed: {fallback_error}")
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Service temporarily unavailable due to rate limits. Please try again later."
+                    )
+            else:
+                # Re-raise if it's not a 429 error
+                logger.error(f"Error calling Gemini API: {e}")
+                raise
+
+        if response is None:
+            logger.error("No response received from Gemini API")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get response from image generation service."
+            )
 
         generated_image_bytes = None
 
@@ -329,7 +378,7 @@ async def virtual_try_on(
                     detail="Failed to generate image. The model might have blocked the request due to safety filters.",
                 )
 
-        logger.info("Virtual try-on successful, returning image.")
+        logger.info(f"Virtual try-on successful using {model_used}, returning image.")
         return Response(content=generated_image_bytes, media_type="image/png")
 
     except HTTPException as he:
@@ -397,34 +446,82 @@ async def hand_drawn_portrait(file: UploadFile = File(...)):
 
         prompt = """Generate a hand-drawn portrait illustration in black and red pen on notebook paper, inspired by doodle art and comic annotations. Keep full likeness of the subject, expressive lines, spontaneous gestures, bold outline glow, handwritten notes around, realistic pen stroke textur,"""
 
-        logger.info("Sending request to Gemini API...")
-        response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
-            contents=[image_pil, prompt],
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                ],
-            ),
+        # Prepare the config (reusable for both models)
+        generate_config = types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
+            safety_settings=[
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+            ],
         )
-        logger.info("Received response from Gemini API")
+
+        # Try primary model first, fallback to secondary on 429
+        response = None
+        model_used = "gemini-3-pro-image-preview"
+        
+        try:
+            logger.info("Sending request to Gemini API (using gemini-3-pro-image-preview)...")
+            response = client.models.generate_content(
+                model="gemini-3-pro-image-preview",
+                contents=[image_pil, prompt],
+                config=generate_config,
+            )
+            logger.info("Received response from Gemini API (gemini-3-pro-image-preview)")
+        except Exception as e:
+            # Check if it's a 429 rate limit error
+            error_str = str(e).lower()
+            status_code = None
+            
+            # Try to extract status code from exception
+            if hasattr(e, 'status_code'):
+                status_code = e.status_code
+            elif hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+                status_code = e.response.status_code
+            elif '429' in error_str or 'rate limit' in error_str or 'too many requests' in error_str:
+                status_code = 429
+            
+            if status_code == 429:
+                logger.warning("Rate limit (429) encountered with gemini-3-pro-image-preview, falling back to gemini-2.5-flash-image")
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash-image",
+                        contents=[image_pil, prompt],
+                        config=generate_config,
+                    )
+                    model_used = "gemini-2.5-flash-image"
+                    logger.info("Received response from Gemini API (gemini-2.5-flash-image fallback)")
+                except Exception as fallback_error:
+                    logger.error(f"Fallback model also failed: {fallback_error}")
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Service temporarily unavailable due to rate limits. Please try again later."
+                    )
+            else:
+                # Re-raise if it's not a 429 error
+                logger.error(f"Error calling Gemini API: {e}")
+                raise
+
+        if response is None:
+            logger.error("No response received from Gemini API")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get response from image generation service."
+            )
 
         generated_image_bytes = None
 
@@ -472,7 +569,7 @@ async def hand_drawn_portrait(file: UploadFile = File(...)):
                     detail="Failed to generate image. The model might have blocked the request due to safety filters.",
                 )
 
-        logger.info("Hand-drawn portrait successful, returning image.")
+        logger.info(f"Hand-drawn portrait successful using {model_used}, returning image.")
         return Response(content=generated_image_bytes, media_type="image/png")
 
     except HTTPException as he:
@@ -492,134 +589,58 @@ async def face_swap(
             f"Processing face swap request. Source: {source_image.filename}, Target: {target_image.filename}"
         )
 
-        # Read images
+        # Read images as bytes
         source_bytes = await source_image.read()
         target_bytes = await target_image.read()
 
-        source_pil = Image.open(io.BytesIO(source_bytes))
-        target_pil = Image.open(io.BytesIO(target_bytes))
+        # Check for Replicate API key
+        replicate_api_key = os.getenv("REPLICATE_API_TOKEN")
+        if not replicate_api_key:
+            logger.error("REPLICATE_API_TOKEN not set")
+            raise HTTPException(status_code=500, detail="REPLICATE_API_TOKEN not set")
 
-        # Calculate aspect ratio of target image to match output
-        width, height = target_pil.size
-        aspect_ratio_map = {
-            (1, 1): "1:1",
-            (2, 3): "2:3",
-            (3, 2): "3:2",
-            (3, 4): "3:4",
-            (4, 3): "4:3",
-            (4, 5): "4:5",
-            (5, 4): "5:4",
-            (9, 16): "9:16",
-            (16, 9): "16:9",
-            (21, 9): "21:9",
-        }
+        # Set Replicate API token
+        os.environ["REPLICATE_API_TOKEN"] = replicate_api_key
 
-        # Find closest aspect ratio
-        def gcd(a, b):
-            while b:
-                a, b = b, a % b
-            return a
+        logger.info("Sending request to Replicate API for Face Swap...")
 
-        divisor = gcd(width, height)
-        ratio_w = width // divisor
-        ratio_h = height // divisor
+        # Prepare image inputs as file-like objects (BytesIO)
+        # Reset to beginning in case BytesIO was read before
+        source_file = io.BytesIO(source_bytes)
+        target_file = io.BytesIO(target_bytes)
+        source_file.seek(0)
+        target_file.seek(0)
 
-        # Try to find exact match or closest
-        aspect_ratio = "1:1"  # default
-        if (ratio_w, ratio_h) in aspect_ratio_map:
-            aspect_ratio = aspect_ratio_map[(ratio_w, ratio_h)]
-        else:
-            # Find closest based on ratio value
-            target_ratio = width / height
-            closest_key = min(
-                aspect_ratio_map.keys(), key=lambda k: abs((k[0] / k[1]) - target_ratio)
-            )
-            aspect_ratio = aspect_ratio_map[closest_key]
-
-        logger.info(f"Detected aspect ratio for target image: {aspect_ratio}")
-
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            logger.error("GOOGLE_API_KEY not set")
-            raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not set")
-
-        client = genai.Client(api_key=api_key)
-
-        prompt = """Face Swap Task:
-        1. Analyze the input images.
-        2. The FIRST image provided is the SOURCE FACE (the face to be copied).
-        3. The SECOND image provided is the TARGET BODY/SCENE (the image to receive the face).
-        4. Replace the face in the TARGET image with the face from the SOURCE image.
-        5. CRITICAL: Keep the TARGET image's background, lighting, body pose, hair, and style EXACTLY as they are. Only change the facial features to match the SOURCE person.
-        6. Blend the source face naturally into the target image, adjusting skin tone and lighting to match the target scene.
-        7. Ensure high photorealism.
-        8. Go all out on quality and realism.
-        """
-
-        # Ensure source image is first (face) and target image is second (scene/body)
-        # We explicitly tell the model which is which in the prompt, but ordering matters for some models.
-
-        logger.info("Sending request to Gemini API for Face Swap...")
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-image",
-            contents=[
-                prompt,
-                source_pil,
-                target_pil,
-            ],  # Put prompt first, then source (face), then target (body)
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
-            ),
+        # Run the Replicate model
+        # swap_image = source face (face to be copied)
+        # input_image = target image (image to receive the face)
+        output = replicate.run(
+            "cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111",
+            input={
+                "swap_image": source_file,
+                "input_image": target_file,
+            },
         )
-        logger.info("Received response from Gemini API")
 
-        generated_image_bytes = None
+        logger.info("Received response from Replicate API")
 
-        if response.parts:
-            for part in response.parts:
-                if part.inline_data:
-                    img = part.as_image()
+        # Save output to temporary file
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+            tmp_file.write(output.read())
 
-                    # Save to a temporary file
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".png", delete=False
-                    ) as tmp_file:
-                        tmp_path = tmp_file.name
+        # Add watermark in-place
+        add_watermark(tmp_path)
 
-                    img.save(tmp_path)
+        # Read back the watermarked image
+        with open(tmp_path, "rb") as f:
+            watermarked_image_bytes = f.read()
 
-                    # Add watermark in-place
-                    add_watermark(tmp_path)
-
-                    # Read back the watermarked image
-                    with open(tmp_path, "rb") as f:
-                        generated_image_bytes = f.read()
-
-                    os.remove(tmp_path)
-                    break
-
-        if not generated_image_bytes:
-            text_response = ""
-            if response.parts:
-                for part in response.parts:
-                    if part.text:
-                        text_response += part.text
-
-            logger.warning(f"No image generated. Text response: {text_response}")
-
-            if text_response:
-                raise HTTPException(
-                    status_code=400, detail=f"Generation failed: {text_response}"
-                )
-            else:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to generate image. The model might have failed to process the request.",
-                )
+        # Clean up temporary file
+        os.remove(tmp_path)
 
         logger.info("Face swap successful, returning image.")
-        return Response(content=generated_image_bytes, media_type="image/png")
+        return Response(content=watermarked_image_bytes, media_type="image/jpeg")
 
     except HTTPException as he:
         logger.error(f"HTTP Exception in face swap: {he.detail}")
@@ -723,27 +744,75 @@ NOTE:
         """
         )
 
-        logger.info("Sending request to Gemini API for Celebrity Selfie...")
-        response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
-            contents=[source_pil, target_pil, prompt],
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    # Sometimes face swaps trigger "Sexually Explicit" falsely due to skin exposure
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                ],
-            ),
+        # Prepare the config (reusable for both models)
+        generate_config = types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
+            safety_settings=[
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                # Sometimes face swaps trigger "Sexually Explicit" falsely due to skin exposure
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+            ],
         )
-        logger.info("Received response from Gemini API")
+
+        # Try primary model first, fallback to secondary on 429
+        response = None
+        model_used = "gemini-3-pro-image-preview"
+        
+        try:
+            logger.info("Sending request to Gemini API for Celebrity Selfie (using gemini-3-pro-image-preview)...")
+            response = client.models.generate_content(
+                model="gemini-3-pro-image-preview",
+                contents=[source_pil, target_pil, prompt],
+                config=generate_config,
+            )
+            logger.info("Received response from Gemini API (gemini-3-pro-image-preview)")
+        except Exception as e:
+            # Check if it's a 429 rate limit error
+            error_str = str(e).lower()
+            status_code = None
+            
+            # Try to extract status code from exception
+            if hasattr(e, 'status_code'):
+                status_code = e.status_code
+            elif hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+                status_code = e.response.status_code
+            elif '429' in error_str or 'rate limit' in error_str or 'too many requests' in error_str:
+                status_code = 429
+            
+            if status_code == 429:
+                logger.warning("Rate limit (429) encountered with gemini-3-pro-image-preview, falling back to gemini-2.5-flash-image")
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash-image",
+                        contents=[source_pil, target_pil, prompt],
+                        config=generate_config,
+                    )
+                    model_used = "gemini-2.5-flash-image"
+                    logger.info("Received response from Gemini API (gemini-2.5-flash-image fallback)")
+                except Exception as fallback_error:
+                    logger.error(f"Fallback model also failed: {fallback_error}")
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Service temporarily unavailable due to rate limits. Please try again later."
+                    )
+            else:
+                # Re-raise if it's not a 429 error
+                logger.error(f"Error calling Gemini API: {e}")
+                raise
+
+        if response is None:
+            logger.error("No response received from Gemini API")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get response from image generation service."
+            )
 
         generated_image_bytes = None
 
@@ -789,7 +858,7 @@ NOTE:
                     detail="Failed to generate image. The model might have failed to process the request.",
                 )
 
-        logger.info("Celebrity selfie successful, returning image.")
+        logger.info(f"Celebrity selfie successful using {model_used}, returning image.")
         return Response(content=generated_image_bytes, media_type="image/png")
 
     except HTTPException as he:
@@ -850,26 +919,74 @@ Requirements:
 Output: A single image containing a 3x3 grid with 9 different hairstyle variations of the same person.
 """
 
-        logger.info("Sending request to Gemini API for Hairstyle Grid...")
-        response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
-            contents=[source_pil, prompt],
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                ],
-            ),
+        # Prepare the config (reusable for both models)
+        generate_config = types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
+            safety_settings=[
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold=types.HarmBlockThreshold.OFF,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold=types.HarmBlockThreshold.OFF,
+                ),
+            ],
         )
-        logger.info("Received response from Gemini API")
+
+        # Try primary model first, fallback to secondary on 429
+        response = None
+        model_used = "gemini-3-pro-image-preview"
+        
+        try:
+            logger.info("Sending request to Gemini API for Hairstyle Grid (using gemini-3-pro-image-preview)...")
+            response = client.models.generate_content(
+                model="gemini-3-pro-image-preview",
+                contents=[source_pil, prompt],
+                config=generate_config,
+            )
+            logger.info("Received response from Gemini API (gemini-3-pro-image-preview)")
+        except Exception as e:
+            # Check if it's a 429 rate limit error
+            error_str = str(e).lower()
+            status_code = None
+            
+            # Try to extract status code from exception
+            if hasattr(e, 'status_code'):
+                status_code = e.status_code
+            elif hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+                status_code = e.response.status_code
+            elif '429' in error_str or 'rate limit' in error_str or 'too many requests' in error_str:
+                status_code = 429
+            
+            if status_code == 429:
+                logger.warning("Rate limit (429) encountered with gemini-3-pro-image-preview, falling back to gemini-2.5-flash-image")
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash-image",
+                        contents=[source_pil, prompt],
+                        config=generate_config,
+                    )
+                    model_used = "gemini-2.5-flash-image"
+                    logger.info("Received response from Gemini API (gemini-2.5-flash-image fallback)")
+                except Exception as fallback_error:
+                    logger.error(f"Fallback model also failed: {fallback_error}")
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Service temporarily unavailable due to rate limits. Please try again later."
+                    )
+            else:
+                # Re-raise if it's not a 429 error
+                logger.error(f"Error calling Gemini API: {e}")
+                raise
+
+        if response is None:
+            logger.error("No response received from Gemini API")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get response from image generation service."
+            )
 
         generated_image_bytes = None
 
@@ -915,7 +1032,7 @@ Output: A single image containing a 3x3 grid with 9 different hairstyle variatio
                     detail="Failed to generate image. The model might have failed to process the request.",
                 )
 
-        logger.info("Hairstyle grid successful, returning image.")
+        logger.info(f"Hairstyle grid successful using {model_used}, returning image.")
         return Response(content=generated_image_bytes, media_type="image/png")
 
     except HTTPException as he:
@@ -1153,34 +1270,82 @@ Requirements:
 
         # Add optional customizations
         if scene_type:
-            base_prompt += f"\n\nScene Type: {scene_type} - Adjust the cinematography and mood to match this genre."
+            base_prompt += f"\n\nScene Type: {scene_type} - Adjust the cinematography and mood to match this genre but keep it realistic and professional unless mentioned specifically."
         
         if mood:
-            base_prompt += f"\n\nMood/Tone: {mood} - The lighting, colors, and composition should reflect this mood."
+            base_prompt += f"\n\nMood/Tone: {mood} - The lighting, colors, and composition should reflect this mood but keep it realistic and professional unless mentioned specifically."
         
         if custom_prompt:
             base_prompt += f"\n\nAdditional Instructions: {custom_prompt}"
 
-        logger.info("Sending request to Gemini API for Cinematic Storyboard...")
-        response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
-            contents=[source_pil, base_prompt],
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                    ),
-                ],
-            ),
+        # Prepare the config (reusable for both models)
+        generate_config = types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
+            safety_settings=[
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+                types.SafetySetting(
+                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+            ],
         )
-        logger.info("Received response from Gemini API")
+
+        # Try primary model first, fallback to secondary on 429
+        response = None
+        model_used = "gemini-3-pro-image-preview"
+        
+        try:
+            logger.info("Sending request to Gemini API for Cinematic Storyboard (using gemini-3-pro-image-preview)...")
+            response = client.models.generate_content(
+                model="gemini-3-pro-image-preview",
+                contents=[source_pil, base_prompt],
+                config=generate_config,
+            )
+            logger.info("Received response from Gemini API (gemini-3-pro-image-preview)")
+        except Exception as e:
+            # Check if it's a 429 rate limit error
+            error_str = str(e).lower()
+            status_code = None
+            
+            # Try to extract status code from exception
+            if hasattr(e, 'status_code'):
+                status_code = e.status_code
+            elif hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+                status_code = e.response.status_code
+            elif '429' in error_str or 'rate limit' in error_str or 'too many requests' in error_str:
+                status_code = 429
+            
+            if status_code == 429:
+                logger.warning("Rate limit (429) encountered with gemini-3-pro-image-preview, falling back to gemini-2.5-flash-image")
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash-image",
+                        contents=[source_pil, base_prompt],
+                        config=generate_config,
+                    )
+                    model_used = "gemini-2.5-flash-image"
+                    logger.info("Received response from Gemini API (gemini-2.5-flash-image fallback)")
+                except Exception as fallback_error:
+                    logger.error(f"Fallback model also failed: {fallback_error}")
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Service temporarily unavailable due to rate limits. Please try again later."
+                    )
+            else:
+                # Re-raise if it's not a 429 error
+                logger.error(f"Error calling Gemini API: {e}")
+                raise
+
+        if response is None:
+            logger.error("No response received from Gemini API")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get response from image generation service."
+            )
 
         generated_image_bytes = None
 
@@ -1226,7 +1391,7 @@ Requirements:
                     detail="Failed to generate image. The model might have failed to process the request.",
                 )
 
-        logger.info("Cinematic storyboard successful, returning image.")
+        logger.info(f"Cinematic storyboard successful using {model_used}, returning image.")
         return Response(content=generated_image_bytes, media_type="image/png")
 
     except HTTPException as he:
