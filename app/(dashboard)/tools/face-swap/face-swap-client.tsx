@@ -67,8 +67,9 @@ export default function FaceSwapClient() {
 
         try {
             const formData = new FormData()
-            formData.append('source_image', sourceFile)
-            formData.append('target_image', targetFile)
+            // Swapped: sourceFile (Source Face) goes to target_image, targetFile (Target Image) goes to source_image
+            formData.append('source_image', targetFile)
+            formData.append('target_image', sourceFile)
 
             // Update status after 5 seconds
             const timeout1 = setTimeout(() => {
