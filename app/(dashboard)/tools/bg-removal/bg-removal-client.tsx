@@ -52,9 +52,8 @@ const ToolbarButton = ({
         <TooltipTrigger asChild>
           <button
             onClick={onClick}
-            className={`${baseClasses} ${
-              isActive ? activeClasses : inactiveClasses
-            }`}
+            className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses
+              }`}
           >
             <Icon className="w-5 h-5 sm:mr-2" />
             <span className="hidden sm:inline">{label}</span>
@@ -157,11 +156,10 @@ const FloatingToolbar = ({
               {/* Transparent Option */}
               <button
                 onClick={() => onBgChange("transparent", "")}
-                className={`w-10 h-10 flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all hover:scale-110 ${
-                  bgType === "transparent"
+                className={`w-10 h-10 flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all hover:scale-110 ${bgType === "transparent"
                     ? "border-indigo-600 ring-2 ring-indigo-200 shadow-lg scale-105"
                     : "border-gray-300 hover:border-indigo-400"
-                }`}
+                  }`}
                 title="Transparent"
               >
                 <div className="w-8 h-8 bg-checkerboard rounded" />
@@ -172,11 +170,10 @@ const FloatingToolbar = ({
                 <button
                   key={color}
                   onClick={() => onBgChange("color", color)}
-                  className={`w-10 h-10 flex-shrink-0 rounded-lg border-2 transition-all hover:scale-110 ${
-                    bgType === "color" && bgValue === color
+                  className={`w-10 h-10 flex-shrink-0 rounded-lg border-2 transition-all hover:scale-110 ${bgType === "color" && bgValue === color
                       ? "border-indigo-600 ring-2 ring-indigo-200 shadow-lg scale-105"
                       : "border-white/80 hover:border-indigo-400 shadow-sm"
-                  }`}
+                    }`}
                   style={{ backgroundColor: color }}
                   title={color}
                 />
@@ -219,11 +216,10 @@ const FloatingToolbar = ({
                           onBgChange("image", img.url);
                           onModeChange("customize");
                         }}
-                        className={`relative w-16 h-10 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                          bgType === "image" && bgValue === img.url
+                        className={`relative w-16 h-10 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${bgType === "image" && bgValue === img.url
                             ? "border-indigo-600 ring-2 ring-indigo-100 shadow-md scale-105"
                             : "border-gray-200 hover:border-indigo-400"
-                        }`}
+                          }`}
                       >
                         <img
                           src={img.url}
@@ -295,7 +291,7 @@ const FloatingToolbar = ({
             </div>
 
             <p className="hidden sm:block text-xs text-gray-500">
-              Supports PNG, JPG, WebP
+              Supports PNG, JPG, WebP, HEIC/HEIF
             </p>
           </div>
         </div>
@@ -384,9 +380,9 @@ export default function BgRemovalClient() {
   } | null>(null);
 
   const validateImageFile = (file: File): string | null => {
-    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"];
     if (!validTypes.includes(file.type)) {
-      return "Please upload a valid image file (PNG, JPG, JPEG, or WebP).";
+      return "Please upload a valid image file (PNG, JPG, JPEG, WebP, or HEIC/HEIF).";
     }
     if (file.size > 50 * 1024 * 1024) {
       return "File size exceeds 50MB limit. Please upload a smaller image.";
@@ -645,6 +641,8 @@ export default function BgRemovalClient() {
                     <span>JPG</span>
                     <span className="w-1 h-1 rounded-full bg-gray-300" />
                     <span>WEBP</span>
+                    <span className="w-1 h-1 rounded-full bg-gray-300" />
+                    <span>HEIC</span>
                   </div>
                 </div>
               </div>
@@ -717,8 +715,8 @@ export default function BgRemovalClient() {
                             bgType === "image"
                               ? `url(${bgValue})`
                               : bgType === "transparent"
-                              ? undefined
-                              : "none",
+                                ? undefined
+                                : "none",
                           backgroundSize: "cover",
                           backgroundPosition: "center",
                         }}

@@ -115,9 +115,9 @@ export default function HairstyleGridClient() {
     }
 
     const validateImageFile = (file: File): string | null => {
-        const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence']
         if (!validTypes.includes(file.type)) {
-            return 'Please upload a valid image file (PNG, JPG, JPEG, or WebP).'
+            return 'Please upload a valid image file (PNG, JPG, JPEG, WebP, or HEIC/HEIF).'
         }
         if (file.size > 50 * 1024 * 1024) {
             return 'File size exceeds 50MB limit. Please upload a smaller image.'
@@ -244,6 +244,8 @@ export default function HairstyleGridClient() {
                                                 <span>JPG</span>
                                                 <span className="w-1 h-1 rounded-full bg-gray-300" />
                                                 <span>WEBP</span>
+                                                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                <span>HEIC</span>
                                             </div>
                                         </div>
                                     </div>

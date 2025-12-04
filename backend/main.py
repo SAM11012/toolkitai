@@ -5,6 +5,14 @@ from pydantic import BaseModel
 from rembg import remove
 from PIL import Image, ImageDraw, ImageFont
 
+# Register HEIF opener for HEIC/HEIF support
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    # pillow-heif not installed, HEIF support will not be available
+    pass
+
 import io
 import os
 import base64
